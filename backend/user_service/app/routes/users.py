@@ -4,7 +4,7 @@ from service.service import get_user as get_user_info, set_user
 
 router = APIRouter()
 
-@router.post("/create", response_model=User)
+@router.post("/create", response_model=User, status_code=201)
 def create_user(user: User):
     existing_user = get_user_info(user.email)
     if existing_user:
