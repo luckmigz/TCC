@@ -5,6 +5,10 @@ from pathlib import Path
 
 DB_PATH = Path("backend/user_service/app/users.json")
 
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+
+
 def _load_users() -> List[User]:
     if not DB_PATH.exists():
         return []

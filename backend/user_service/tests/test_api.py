@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 from fastapi.testclient import TestClient
-from app import app  # ou ajuste para o caminho correto
+from app import app  
 
 client = TestClient(app)
 
