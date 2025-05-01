@@ -1,5 +1,5 @@
 import json
-from models import User
+from  models.models import User
 from typing import List, Optional
 from pathlib import Path
 
