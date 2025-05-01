@@ -1,24 +1,19 @@
 from fastapi import APIRouter, HTTPException
-from models import User
-
+from model import User
+from service import user as user_service
 
 router = APIRouter()
 
-mock_users_db = {}
-
-@router.post("/register")
-async def register_user(user: User):
-    if user.email in mock_users_db:
+@router.post("/create", response_model=User)
+def create_user(user: User):
+    existing_user = user_service.get_user(user.email)
+    if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    return user_service.create_user(user)
 
-    user.id = len(mock_users_db) + 1
-    mock_users_db[user.email] = user
-    return {"message": "User registered successfully", "user": user}
-
-@router.get("/login")
-async def login_user(user: User):
-    stored_user = mock_users_db.get(user.email)
-    if not stored_user or stored_user.password != user.password:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-
-    return {"message": "Login successful", "user": stored_user}
+@router.get("", response_model=User)
+def get_user(email: str):
+    user = user_service.get_user(email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
