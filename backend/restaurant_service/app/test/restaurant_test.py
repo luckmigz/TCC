@@ -3,14 +3,15 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 
-# Adiciona o path do app
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
-from app import app  # sua FastAPI app
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))  # Adiciona a raiz do projeto
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))  # Adiciona o diretório app
+
+from app import app  
 
 client = TestClient(app)
 
-# Dados base para restaurante de teste
+
 test_restaurant = {
     "name": "Restaurante Teste",
     "cep": "01001-000",
