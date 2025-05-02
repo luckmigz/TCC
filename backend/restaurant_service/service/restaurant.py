@@ -70,6 +70,8 @@ class RestaurantService:
         restaurants = cls._load_restaurants()
         for i, r in enumerate(restaurants):
             if r.cnpj == cnpj:
+                if not r.is_open:
+                    raise ValueError("Restaurant is closed.")
                 if occupancy > r.max_occupancy:
                     raise ValueError("Occupancy exceeds maximum limit.")
                 r.occupancy = occupancy
