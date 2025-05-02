@@ -1,0 +1,15 @@
+[
+    {
+        "id": 1,
+        "name": "Restaurante Teste",
+        "address": "Praça da Sé, Sé, São Paulo-SP",
+        "cep": "01001-000",
+        "cnpj": "12345678000100",
+        "phone_number": "11999999999",
+        "cuisine_type": "Italiana",
+        "rating": 4.5,
+        "is_open": true,
+        "occupancy": 20,
+        "max_occupancy": 50
+    }
+]
