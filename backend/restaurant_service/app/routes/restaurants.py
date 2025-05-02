@@ -1,30 +1,38 @@
 from fastapi import APIRouter, Body, HTTPException, Path
 from service import RestaurantService as restaurant_service
+from models import Restaurant
 
 router = APIRouter()
 
-@router.post("/create", response_model=dict, status_code=201)
-def create(restaurant: dict):
-    existing_restaurant = restaurant_service.get(restaurant["name"])
+# Criação do restaurante
+@router.post("/create", response_model=Restaurant, status_code=201)
+async def create(restaurant: Restaurant):
+    existing_restaurant = restaurant_service.get(restaurant.name)
     if existing_restaurant:
         raise HTTPException(status_code=400, detail="Restaurant already exists")
-    return restaurant_service.create_restaurant(restaurant)
+    # Cria o restaurante e retorna uma instância de Restaurant
+    created_restaurant = await restaurant_service.create(restaurant.dict())
+    return created_restaurant
 
-@router.get("", response_model=dict, status_code=200)
+# Obtenção do restaurante
+@router.get("", response_model=Restaurant, status_code=200)
 def get(name: str):
     restaurant = restaurant_service.get(name)
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
     return restaurant
 
-@router.post("/{cnpj}", response_model=dict, status_code=200)
+# Atualização do restaurante
+@router.post("/{cnpj}", response_model=Restaurant, status_code=200)
 def update(cnpj: str, restaurant: dict):
     existing_restaurant = restaurant_service.get(cnpj)
     if not existing_restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
-    return restaurant_service.update_restaurant(cnpj, restaurant)
+    updated_restaurant = restaurant_service.update(cnpj, restaurant)
+    return updated_restaurant
 
-@router.patch("/{cnpj}/occupancy", response_model=dict, status_code=200)
+# Atualização de ocupação
+@router.patch("/{cnpj}/occupancy", response_model=Restaurant, status_code=200)
 def update_occupancy_route(
     cnpj: str = Path(..., description="CNPJ do restaurante"),
     occupancy: int = Body(..., embed=True)
