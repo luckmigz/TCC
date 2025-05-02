@@ -1,7 +1,7 @@
 import json 
 from pathlib import Path
 from typing import List, Optional
-from models.model import Restaurant
+from models import Restaurant
 
 class RestaurantService:
     
