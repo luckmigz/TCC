@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Path
 from service import RestaurantService as restaurant_service
 
 router = APIRouter()
@@ -17,9 +17,22 @@ def get(name: str):
         raise HTTPException(status_code=404, detail="Restaurant not found")
     return restaurant
 
-@router.post("/{name}", response_model=dict, status_code=200)
-def update(name: str, restaurant: dict):
-    existing_restaurant = restaurant_service.get(name)
+@router.post("/{cnpj}", response_model=dict, status_code=200)
+def update(cnpj: str, restaurant: dict):
+    existing_restaurant = restaurant_service.get(cnpj)
     if not existing_restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
-    return restaurant_service.update_restaurant(name, restaurant)
+    return restaurant_service.update_restaurant(cnpj, restaurant)
+
+@router.patch("/{cnpj}/occupancy", response_model=dict, status_code=200)
+def update_occupancy_route(
+    cnpj: str = Path(..., description="CNPJ do restaurante"),
+    occupancy: int = Body(..., embed=True)
+):
+    try:
+        updated = restaurant_service.update_occupancy(cnpj, occupancy)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Restaurant not found")
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
