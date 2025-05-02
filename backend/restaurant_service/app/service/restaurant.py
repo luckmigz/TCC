@@ -1,4 +1,4 @@
-import json 
+import json
 from pathlib import Path
 from typing import List, Optional
 from models import Restaurant
@@ -15,9 +15,6 @@ async def fetch_cep(cep: str) -> Optional[str]:
             print(f"An error occurred while fetching coordinates: {e}")
             return None
     
-
-
-
 
 class RestaurantService:
     
@@ -63,7 +60,7 @@ class RestaurantService:
         return next((restaurant for restaurant in cls._load_restaurants() if restaurant.name == name), None)
 
     @classmethod
-    async def update(cls,updated: Restaurant, cnpj:str) -> Optional[Restaurant]:
+    async def update(cls, updated: Restaurant, cnpj: str) -> Optional[Restaurant]:
         restaurants = cls._load_restaurants()
         for i, r in enumerate(restaurants):
             if r.cnpj == cnpj:
@@ -71,7 +68,7 @@ class RestaurantService:
                 updated.address = await fetch_cep(updated.cep)
                 restaurants[i] = updated
                 cls._save_restaurants(restaurants)
-            return updated
+                return updated
         return None
     
     @classmethod
@@ -87,4 +84,20 @@ class RestaurantService:
                 restaurants[i] = r
                 cls._save_restaurants(restaurants)
                 return r
+        return None
+    
+    @classmethod
+    def delete(cls, cnpj: str) -> bool:
+        restaurants = cls._load_restaurants()
+        new_list = [r for r in restaurants if r.cnpj != cnpj]
+        if len(new_list) == len(restaurants):
+            return False
+        cls._save_restaurants(new_list)
+        return True
+
+    @classmethod
+    def get_by_cnpj(cls, cnpj: str) -> Optional[Restaurant]:
+        for restaurant in cls._load_restaurants():
+            if restaurant.cnpj == cnpj:
+                return restaurant
         return None
