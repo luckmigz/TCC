@@ -1,32 +1,55 @@
 import aio_pika
 import asyncio
 import json
-from typing import Callable, Awaitable
+import logging
+from typing import Callable, Optional
 
-RABBITMQ_URL = "amqp://guest:guest@localhost/"
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-async def subscribe_to_queue(queue_name: str, callback: Callable[[dict], Awaitable[None]]):
-    try:
-        # Connect to RabbitMQ
+RABBITMQ_URL = "amqp://rabbitmq-service:5672"
+_channel: Optional[aio_pika.abc.AbstractChannel] = None
+
+async def get_connection() -> aio_pika.abc.AbstractChannel:
+    global _channel
+    if not _channel or _channel.is_closed:
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
-        async with connection:
-            channel = await connection.channel()
-            queue = await channel.declare_queue(queue_name, durable=True)
-            print(f"Subscribed to queue: {queue_name}")
-            
-            async with queue.iterator() as queue_iter:
-                async for message in queue_iter:
-                    async with message.process():
-                        try:
-                            message_body = json.loads(message.body.decode('utf-8'))
-                           
-                            await callback(message_body)
-                        except json.JSONDecodeError as e:
-                            print(f"Failed to decode message: {e}")
-                        except Exception as e:
-                            print(f"Error processing message: {e}")
+        _channel = await connection.channel()
+    return _channel
 
-            print(f"Subscribed to {queue_name}. Waiting for messages...")
-            await asyncio.Future()  
+async def subscribe_to_event(queue_name: str, callback: Callable[[dict], None]) -> None:
+    """
+    Escuta mensagens de uma fila e executa um callback.
+    """
+    try:
+        channel = await get_connection()
+        queue = await channel.declare_queue(queue_name, durable=False)
+
+        logger.info(f" [*] Waiting for messages in {queue_name}. To exit press CTRL+C")
+
+        async def on_message(message: aio_pika.IncomingMessage):
+            async with message.process():
+                try:
+                    body_str = message.body.decode('utf-8')
+                    msg = json.loads(body_str)
+                    logger.info(f" [x] Received {body_str}")
+                    callback(msg)
+                    # ack automático via message.process()
+                except Exception as e:
+                    logger.error("Erro ao processar mensagem", exc_info=e)
+
+        await queue.consume(on_message, no_ack=False)
+
     except Exception as e:
-        print(f"Failed to subscribe to queue {queue_name}: {e}")
+        logger.error("Erro ao consumir mensagens da fila", exc_info=e)
+
+async def purge_queue(queue_name: str) -> None:
+    """
+    Limpa todas as mensagens pendentes da fila.
+    """
+    try:
+        channel = await get_connection()
+        await channel.queue_purge(queue_name)
+        logger.info(f"Fila '{queue_name}' limpa com sucesso.")
+    except Exception as e:
+        logger.error(f"Erro ao limpar fila '{queue_name}'", exc_info=e)
