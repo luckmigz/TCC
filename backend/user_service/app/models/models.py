@@ -6,5 +6,18 @@ class User(BaseModel):
     name: str
     email: EmailStr
     password: str
-    cpf: str
+    cpf: str  # Campo que pode conter CPF ou CNPJ
 
+class Restaurant(BaseModel):
+    id: Optional[int] = None
+    name: str 
+    address: str | None = None
+    cep: str
+    cnpj: str
+    phone_number: str 
+    cuisine_type: str 
+    rating: Optional[float] 
+    is_open: bool 
+    occupancy: int 
+    max_occupancy: int
+    
