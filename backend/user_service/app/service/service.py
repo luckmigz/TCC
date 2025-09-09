@@ -1,24 +1,23 @@
 import asyncio
 import json
 import re
-from models.models import User
+from user_service.app.models.models import User
 import motor.motor_asyncio
 import os 
 
 TIMEOUT = 5  # segundos
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+serv://<user>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority")
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://darknnes99:<db_password>@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios")
 
-# Configuração dos bancos de dados
-DB_NAME_CPF = os.getenv("DB_NAME_CPF", "userdb_cpf")
-DB_NAME_CNPJ = os.getenv("DB_NAME_CNPJ", "userdb_cnpj")
+# Configuração do banco de dados
+DB_NAME = os.getenv("DB_NAME", "userdb")
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db_cpf = client[DB_NAME_CPF]
-db_cnpj = client[DB_NAME_CNPJ]
+db = client[DB_NAME]
 
-collection_cpf = db_cpf["users"]
-collection_cnpj = db_cnpj["users"]
+# Duas coleções diferentes: users (CPF) e restaurants (CNPJ)
+collection_users = db["users"]        # Para usuários pessoa física (CPF)
+collection_restaurants = db["restaurants"]  # Para usuários pessoa jurídica (CNPJ)
 
 def user_helper(user) -> dict:
     return {
@@ -44,9 +43,9 @@ def is_cnpj(document: str) -> bool:
 def get_collection_by_document(document: str):
     """Retorna a coleção apropriada baseada no tipo de documento"""
     if is_cpf(document):
-        return collection_cpf
+        return collection_users
     elif is_cnpj(document):
-        return collection_cnpj
+        return collection_restaurants
     else:
         raise ValueError("Documento inválido. Deve ser CPF (11 dígitos) ou CNPJ (14 dígitos)")
 
@@ -78,9 +77,9 @@ async def create_user(user: User) -> User:
     return user_helper(new_user)
     
 async def get_user_email(email: str) -> User:
-    # Buscar em ambos os bancos de dados
-    user_cpf = await collection_cpf.find_one({"email": email})
-    user_cnpj = await collection_cnpj.find_one({"email": email})
+    # Buscar em ambas as coleções
+    user_cpf = await collection_users.find_one({"email": email})
+    user_cnpj = await collection_restaurants.find_one({"email": email})
     
     user = user_cpf or user_cnpj
     if not user:
@@ -127,16 +126,16 @@ async def update_user(user: User) -> User:
     return user_helper(updated_user)
 
 async def delete_user(email: str) -> dict:
-    # Buscar o usuário em ambos os bancos para encontrar onde está
-    user_cpf = await collection_cpf.find_one({"email": email})
-    user_cnpj = await collection_cnpj.find_one({"email": email})
+    # Buscar o usuário em ambas as coleções para encontrar onde está
+    user_cpf = await collection_users.find_one({"email": email})
+    user_cnpj = await collection_restaurants.find_one({"email": email})
     
     user = user_cpf or user_cnpj
     if not user:
         raise ValueError("Usuário não encontrado")
     
     # Determinar qual coleção usar
-    collection = collection_cpf if user_cpf else collection_cnpj
+    collection = collection_users if user_cpf else collection_restaurants
     
     # Deletar o usuário
     result = await collection.delete_one({"email": email})
