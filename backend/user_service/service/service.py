@@ -1,7 +1,5 @@
-import asyncio
-import json
 import re
-from user_service.app.models.models import User
+from models.models import User
 import motor.motor_asyncio
 import os 
 
