@@ -5,13 +5,16 @@ import os
 
 TIMEOUT = 5  # segundos
 
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb+srv://darknnes99:<db_password>@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios")
-
-# Configuração do banco de dados
-DB_NAME = os.getenv("DB_NAME", "userdb")
+MONGODB_URL = "mongodb+srv://darknnes99:sEnh4d0crl4@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios"
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db = client[DB_NAME]
+db = client["Usuarios"]
+
+collection_users = db["users"]
+collection_restaurants = db["restaurantes"]
+
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
+
 
 # Duas coleções diferentes: users (CPF) e restaurants (CNPJ)
 collection_users = db["users"]        # Para usuários pessoa física (CPF)
