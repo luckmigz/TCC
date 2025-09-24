@@ -1,5 +1,5 @@
 import re
-from ..models.models import User
+from ..models.models import User, Restaurant
 import motor.motor_asyncio
 import os 
 
@@ -20,6 +20,9 @@ client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
 collection_users = db["users"]        # Para usuários pessoa física (CPF)
 collection_restaurants = db["restaurants"]  # Para usuários pessoa jurídica (CNPJ)
 
+# ===============================
+# HELPERS
+# ===============================
 def user_helper(user) -> dict:
     return {
         "id": str(user["_id"]),
@@ -28,16 +31,27 @@ def user_helper(user) -> dict:
         "password": user["password"],
         "cpf": user["cpf"],
     }
+def restaurant_helper(restaurant) -> dict:
+    return {
+        "id": str(restaurant["_id"]),
+        "name": restaurant.get("name"),
+        "email": restaurant.get("email"),
+        "password": restaurant.get("password"),
+        "cnpj": restaurant.get("cnpj"),
+        "occupancy": restaurant.get("occupancy"),
+    }
+    
+# ===============================
+# FUNÇÕES DE VALIDAÇÃO
+# ===============================
 
 def is_cpf(document: str) -> bool:
     """Verifica se o documento é um CPF (11 dígitos)"""
-    # Remove caracteres não numéricos
     clean_doc = re.sub(r'\D', '', document)
     return len(clean_doc) == 11
 
 def is_cnpj(document: str) -> bool:
     """Verifica se o documento é um CNPJ (14 dígitos)"""
-    # Remove caracteres não numéricos
     clean_doc = re.sub(r'\D', '', document)
     return len(clean_doc) == 14
 
@@ -59,6 +73,9 @@ def get_user_type(document: str) -> str:
     else:
         raise ValueError("Documento inválido. Deve ser CPF (11 dígitos) ou CNPJ (14 dígitos)")
     
+# ===============================
+# SERVICE - USUÁRIOS (CPF/CNPJ)
+# ===============================
 
 
 async def create_user(user: User) -> User:
@@ -145,3 +162,58 @@ async def delete_user(email: str) -> dict:
         raise ValueError("Erro ao deletar usuário")
     
     return {"success": True, "message": "Usuário deletado com sucesso"}
+
+# ===============================
+# SERVICE - RESTAURANTS
+# ===============================
+
+async def create_restaurant(restaurant: Restaurant) -> dict:
+    existing = await collection_restaurants.find_one({"cnpj": restaurant.cnpj})
+    if existing:
+        raise ValueError("Restaurante com este CNPJ já existe")
+    
+    rest_dict = restaurant.model_dump(exclude={"id"})
+    result = await collection_restaurants.insert_one(rest_dict)
+    new_restaurant = await collection_restaurants.find_one({"_id": result.inserted_id})
+    return restaurant_helper(new_restaurant)
+
+async def update_restaurant(restaurant: Restaurant) -> dict:
+    existing = await collection_restaurants.find_one({"cnpj": restaurant.cnpj})
+    if not existing:
+        raise ValueError("Restaurante não encontrado")
+    
+    rest_dict = restaurant.model_dump(exclude={"id"})
+    await collection_restaurants.update_one({"cnpj": restaurant.cnpj}, {"$set": rest_dict})
+    
+    updated = await collection_restaurants.find_one({"cnpj": restaurant.cnpj})
+    return restaurant_helper(updated)
+
+async def delete_restaurant(cnpj: str) -> dict:
+    result = await collection_restaurants.delete_one({"cnpj": cnpj})
+    if result.deleted_count == 0:
+        raise ValueError("Restaurante não encontrado")
+    
+    return {"success": True, "message": "Restaurante deletado com sucesso"}
+
+async def get_restaurant_cnpj(cnpj: str) -> dict:
+    restaurant = await collection_restaurants.find_one({"cnpj": cnpj})
+    if not restaurant:
+        raise ValueError("Restaurante não encontrado")
+    
+    return restaurant_helper(restaurant)
+
+async def update_restaurant_occupancy(cnpj: str, new_occupancy: int) -> dict:
+    existing = await collection_restaurants.find_one({"cnpj": cnpj})
+    if not existing:
+        raise ValueError("Restaurante não encontrado")
+
+    result = await collection_restaurants.update_one(
+        {"cnpj": cnpj},
+        {"$set": {"occupancy": new_occupancy}}
+    )
+
+    if result.matched_count == 0:
+        raise ValueError("Erro ao atualizar ocupação")
+
+    updated = await collection_restaurants.find_one({"cnpj": cnpj})
+    return restaurant_helper(updated)
