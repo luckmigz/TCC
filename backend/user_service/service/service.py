@@ -1,5 +1,5 @@
 import re
-from models.models import User
+from ..models.models import User
 import motor.motor_asyncio
 import os 
 
