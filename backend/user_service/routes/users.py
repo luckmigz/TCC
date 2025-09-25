@@ -45,9 +45,10 @@ async def get_user_by_cpf_route(cpf: str):
     """
     try:
         user = await get_user_cpf(cpf)
-        print( user )
+        print( user  + " AQUI")
         return user
     except ValueError as e:
+        print( str(e) + " AQUI2")
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.put("/user/update", response_model=Dict, tags=["Users"])
