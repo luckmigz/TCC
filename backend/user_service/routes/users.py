@@ -45,6 +45,7 @@ async def get_user_by_cpf_route(cpf: str):
     """
     try:
         user = await get_user_cpf(cpf)
+        print( user )
         return user
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
