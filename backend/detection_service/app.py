@@ -26,6 +26,7 @@ def carregar_dados():
     if not os.path.exists(CSV_PATH):
         return pd.DataFrame()
 
+
     df = pd.read_csv(CSV_PATH)
 
     # Conversões
