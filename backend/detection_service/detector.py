@@ -23,7 +23,10 @@ if os.path.exists(IMG_PATH):
 
 # Carrega modelo YOLO
 model = YOLO("yolov8n.pt")
-cap = cv2.VideoCapture(0)
+
+# URL RTSP da Tapo C200
+url = "rtsp://CameraSalao:CameraSalao@192.168.15.20:554/stream1"
+cap = cv2.VideoCapture(url)
 
 # Cria CSV vazio, se não existir
 if not os.path.exists(OUTPUT_CSV):
