@@ -1,0 +1,7 @@
+.pt
+
+# Outras sugestões para projetos Python
+__pycache__/
+*.pyc
+.env
+.vscode/
