@@ -32,10 +32,10 @@ cap = cv2.VideoCapture(url)
 if not os.path.exists(OUTPUT_CSV):
     pd.DataFrame(columns=COLUMNS).to_csv(OUTPUT_CSV, index=False)
 
-# Inicializa tracker
+# Inicializa tracker (Necessário para a contagem correta de pessoas em um frame)
 tracker = sv.ByteTrack()
 
-# Para evitar registros duplicados
+# Para evitar registros duplicados em frames muito próximos
 ultimo_registro = {}
 
 print("🚀 Detector iniciado. Pressione Ctrl+C para sair.")
@@ -47,9 +47,10 @@ while True:
         break
 
     ret, frame = cap.read()
-    if not ret:
-        print("⚠️ Falha ao capturar frame.")
-        break
+    if not ret or frame is None:
+        print("⚠️ Falha ao capturar frame, tentando novamente...")
+        time.sleep(1)
+        continue
 
     # Roda YOLO
     results = model(frame)[0]
@@ -68,7 +69,7 @@ while True:
         label = model.names[int(cls)]
         conf = float(conf)
 
-        # Checa duplicidade: mesmo objeto já registrado recentemente
+        # Checa duplicidade: mesmo objeto já registrado recentemente (lógica de tracker)
         key = (track_id, label)
         if key in ultimo_registro:
             diff = datetime.datetime.now() - ultimo_registro[key]
@@ -85,13 +86,13 @@ while True:
                     (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-    # Salva no CSV
+    # Salva no CSV: 🚨 Usando 'a' (append) para construir o histórico!
     if rows:
         df = pd.DataFrame(rows, columns=COLUMNS)
         df.to_csv(OUTPUT_CSV, mode='a', header=False, index=False)
         cv2.imwrite(IMG_PATH, frame)
 
-    time.sleep(0.5)  # diminui carga
+    time.sleep(0.05)  # diminui carga
 
 cap.release()
 print("✅ Detector finalizado.")
