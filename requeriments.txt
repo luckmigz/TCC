@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+streamlit
+streamlit-autorefresh
+pymongo[srv]
+ultralytics
+supervision
+opencv-python-headless
+pandas
+altair
+python-dotenv
