@@ -15,17 +15,20 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+
 class Restaurant(BaseModel):
     id: Optional[str] = None
-    name: str
-    address: str | None = None
+    name: str 
+    email: EmailStr
+    password: str
+    address: Optional[str] = None
     cep: str
     cnpj: str
-    phone_number: str
-    cuisine_type: str
-    rating: Optional[float]
-    is_open: bool
-    occupancy: int
+    phone_number: str 
+    cuisine_type: str 
+    rating: Optional[float] = None
+    is_open: bool 
+    occupancy: int 
     max_occupancy: int
 
     class Config:
