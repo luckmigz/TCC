@@ -11,7 +11,7 @@ class User(BaseModel):
 class Restaurant(BaseModel):
     id: Optional[str] = None
     name: str 
-    email: str
+    email: EmailStr
     password: str
     address: Optional[str] = None
     cep: str
