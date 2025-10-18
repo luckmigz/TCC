@@ -11,6 +11,8 @@ async def login_user(user: User):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(f"{USER_API_URL}/user/email/{user.email}")
+            print(response)
+            print(response.status_code)
             if response.status_code == 404:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
