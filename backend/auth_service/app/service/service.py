@@ -20,7 +20,8 @@ async def login_user(email: str, password: str):
             if password != db_user["password"]:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-            access_token = create_access_token(data={"sub": email}, expires_delta=timedelta(minutes=30))
+            token_data = {"sub": email, "scope": "user"}
+            access_token = create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
             return Token(access_token=access_token)
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")
@@ -53,7 +54,8 @@ async def login_restaurant(email: str, password: str):
             if password != db_user["password"]:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-            access_token = create_access_token(data={"sub": email}, expires_delta=timedelta(minutes=30))
+            token_data = {"sub": email, "scope": "restaurant"}
+            access_token = create_access_token(data=token_data, expires_delta=timedelta(minutes=30))
             return Token(access_token=access_token)
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")

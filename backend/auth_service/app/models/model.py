@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Literal, Optional
 
 class User(BaseModel):
     id: Optional[str] = None
@@ -32,4 +32,10 @@ class Restaurant(BaseModel):
     max_occupancy: int
 
     class Config:
-        from_attributes = True # <-- RENAMED FROM orm_mode
+        from_attributes = True 
+        
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    login_as: Literal['user', 'restaurant'] = 'user'
