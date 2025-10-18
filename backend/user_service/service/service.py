@@ -16,8 +16,8 @@ collection_restaurants = db["restaurantes"]
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
 
 
-# Duas coleções diferentes: users (CPF) e restaurants (CNPJ)
-collection_users = db["users"]        # Para usuários pessoa física (CPF)
+
+collection_users = db["users"]       
 collection_restaurants = db["restaurants"]  # Para usuários pessoa jurídica (CNPJ)
 
 # ===============================
@@ -33,12 +33,19 @@ def user_helper(user) -> dict:
     }
 def restaurant_helper(restaurant) -> dict:
     return {
-        "id": str(restaurant["_id"]),
+        "id": str(restaurant.get("_id")),
         "name": restaurant.get("name"),
         "email": restaurant.get("email"),
         "password": restaurant.get("password"),
+        "address": restaurant.get("address"),
+        "cep": restaurant.get("cep"),
         "cnpj": restaurant.get("cnpj"),
+        "phone_number": restaurant.get("phone_number"),
+        "cuisine_type": restaurant.get("cuisine_type"),
+        "rating": restaurant.get("rating"),
+        "is_open": restaurant.get("is_open"),
         "occupancy": restaurant.get("occupancy"),
+        "max_occupancy": restaurant.get("max_occupancy")
     }
     
 # ===============================
