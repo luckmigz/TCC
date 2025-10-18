@@ -4,9 +4,7 @@ from app.service import service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-@router.post("/register")
-async def register(user: User):
-    return await service.register_user(user)
+
 
 @router.post("/login", response_model=Token)
 async def login(user: User):
