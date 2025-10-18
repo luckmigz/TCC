@@ -5,7 +5,7 @@ from ..models.model import User, Token
 from ..security.security import create_access_token, decode_token 
 from datetime import timedelta
 
-USER_API_URL = os.environ.get("https://tcc-user-db-530d29de8ef0.herokuapp.com", "http://localhost:8000/users")
+USER_API_URL = "https://tcc-user-db-530d29de8ef0.herokuapp.com"
 
 async def login_user(user: User):
     async with httpx.AsyncClient() as client:
