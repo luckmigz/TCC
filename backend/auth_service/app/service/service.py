@@ -45,7 +45,7 @@ async def get_current_user(token: str):
 async def login_restaurant(restaurant: Restaurant):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{USER_API_URL}/user/email/{restaurant.email}")
+            response = await client.get(f"{USER_API_URL}/restaurant/email/{restaurant.email}")
             print(response)
             print(response.status_code)
             if response.status_code == 404:
@@ -68,7 +68,7 @@ async def get_current_restaurant(token: str):
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{USER_API_URL}/user/email/{email}")
+            response = await client.get(f"{USER_API_URL}/restaurant/email/{email}")
             if response.status_code != 200:
                 raise HTTPException(status_code=401, detail="Invalid token")
 
