@@ -1,7 +1,5 @@
 import httpx
-import os
-from fastapi import HTTPException
-from pydantic import EmailStr
+from fastapi import HTTPException 
 from ..models.model import Restaurant, User, Token
 from ..security.security import create_access_token, decode_token 
 from datetime import timedelta
