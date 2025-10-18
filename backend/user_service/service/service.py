@@ -28,7 +28,6 @@ def user_helper(user) -> dict:
         "id": str(user["_id"]),
         "name": user["name"],
         "email": user["email"],
-        "password": user["password"],
         "cpf": user["cpf"],
     }
 def restaurant_helper(restaurant) -> dict:
@@ -36,7 +35,6 @@ def restaurant_helper(restaurant) -> dict:
         "id": str(restaurant.get("_id")),
         "name": restaurant.get("name"),
         "email": restaurant.get("email"),
-        "password": restaurant.get("password"),
         "address": restaurant.get("address"),
         "cep": restaurant.get("cep"),
         "cnpj": restaurant.get("cnpj"),
