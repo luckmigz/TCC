@@ -217,3 +217,9 @@ async def update_restaurant_occupancy(cnpj: str, new_occupancy: int) -> dict:
 
     updated = await collection_restaurants.find_one({"cnpj": cnpj})
     return restaurant_helper(updated)
+
+async def get_restaurant_email(email: str) -> dict:
+    restaurant = await collection_restaurants.find_one({"email": email})
+    if not restaurant:
+        raise ValueError("Restaurante não encontrado")
+    return restaurant_helper(restaurant)

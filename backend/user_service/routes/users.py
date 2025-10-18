@@ -11,7 +11,8 @@ from ..service.service import (
     get_restaurant_cnpj,
     update_restaurant,
     delete_restaurant,
-    update_restaurant_occupancy
+    update_restaurant_occupancy,
+    get_restaurant_email
 )
 
 router = APIRouter()
@@ -136,3 +137,13 @@ async def update_occupancy_route(cnpj: str, occupancy_update: Dict[str, int]):
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@router.get("/restaurant/email/{email}", response_model=Dict, tags=["Restaurants"])
+async def get_restaurant_by_email_route(email: str):
+    """
+    Busca um restaurante pelo email.
+    """
+    try:
+        restaurant = await get_restaurant_email(email)
+        return restaurant
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
