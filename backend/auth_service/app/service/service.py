@@ -1,27 +1,26 @@
 import httpx
 import os
 from fastapi import HTTPException
+from pydantic import EmailStr
 from ..models.model import Restaurant, User, Token
 from ..security.security import create_access_token, decode_token 
 from datetime import timedelta
 
 USER_API_URL = "https://tcc-user-db-530d29de8ef0.herokuapp.com"
 
-async def login_user(user: User):
+async def login_user(email: EmailStr, password: str):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{USER_API_URL}/user/email/{user.email}")
-            print(response)
-            print(response.status_code)
+            response = await client.get(f"{USER_API_URL}/user/email/{email}")
             if response.status_code == 404:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
             db_user = response.json()
 
-            if user.password != db_user["password"]:
+            if password != db_user["password"]:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-            access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=30))
+            access_token = create_access_token(data={"sub": email}, expires_delta=timedelta(minutes=30))
             return Token(access_token=access_token)
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")
@@ -42,10 +41,10 @@ async def get_current_user(token: str):
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")
         
-async def login_restaurant(restaurant: Restaurant):
+async def login_restaurant(email: EmailStr, password: str):
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{USER_API_URL}/restaurant/email/{restaurant.email}")
+            response = await client.get(f"{USER_API_URL}/restaurant/email/{email}")
             print(response)
             print(response.status_code)
             if response.status_code == 404:
@@ -53,10 +52,10 @@ async def login_restaurant(restaurant: Restaurant):
 
             db_user = response.json()
 
-            if restaurant.password != db_user["password"]:
+            if password != db_user["password"]:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
-            access_token = create_access_token(data={"sub": restaurant.email}, expires_delta=timedelta(minutes=30))
+            access_token = create_access_token(data={"sub": email}, expires_delta=timedelta(minutes=30))
             return Token(access_token=access_token)
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")
