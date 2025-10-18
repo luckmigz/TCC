@@ -1,1 +1,0 @@
-from .restaurants import router as restaurant_router
