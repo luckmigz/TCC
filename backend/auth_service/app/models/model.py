@@ -29,4 +29,4 @@ class Restaurant(BaseModel):
     max_occupancy: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True # <-- RENAMED FROM orm_mode
