@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class User(BaseModel):
-    id: Optional[int] = None
+    id: Optional[str] = None
     name: str
     email: EmailStr
     password: str
@@ -16,7 +16,7 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class Restaurant(BaseModel):
-    id: Optional[int] = None
+    id: Optional[str] = None
     name: str
     address: str | None = None
     cep: str
