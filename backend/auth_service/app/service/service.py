@@ -8,7 +8,7 @@ from datetime import timedelta
 
 USER_API_URL = "https://tcc-user-db-530d29de8ef0.herokuapp.com"
 
-async def login_user(email: EmailStr, password: str):
+async def login_user(email: str, password: str):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(f"{USER_API_URL}/user/email/{email}")
@@ -41,12 +41,10 @@ async def get_current_user(token: str):
         except httpx.ConnectError:
             raise HTTPException(status_code=503, detail="Could not connect to User Service")
         
-async def login_restaurant(email: EmailStr, password: str):
+async def login_restaurant(email: str, password: str):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(f"{USER_API_URL}/restaurant/email/{email}")
-            print(response)
-            print(response.status_code)
             if response.status_code == 404:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
