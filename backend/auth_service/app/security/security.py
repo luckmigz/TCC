@@ -17,6 +17,7 @@ def decode_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
        
         if payload.get("sub") is None:
+            print("Token inválido: 'sub' ausente")
             return None
       
         return payload
