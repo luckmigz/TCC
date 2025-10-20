@@ -1,51 +1,23 @@
-# Bem-vindo a seu Projeto
+# Flutter app in Zapp!
 
-## Clonando repositório
+A new Flutter project built with Zapp!
 
-Para começar seu projeto, primeiro abra a pasta que deseja utilizar, copie o URL do seu projeto, entre no terminal e digite:
+----
 
-```bash
-git clone https://github.com/4-ANO-COMP-IMT/[$TRABALHO]_[$GRUPO].git
-```
+> To learn how to use Zapp! check out the [documentation](https://docs.zapp.run)
 
-## Iniciando o projeto
+----
 
-Após criar entrar no repostório, crie o arquivo <strong> .gitignore </strong> na pasta raiz do projeto. Adicione as informações baseadas nesse [link](https://github.com/github/gitignore).
+## Getting Started
 
-## Branches
-Todas as alterações devem ser realizadas em branches criadas pelos alunos e mescladas com a <strong>dev</strong> após a aprovação do grupo.<br>
-Para a entrega final, o professor realizará a review e mesclagem com a <strong>prod</strong>. Esta review conterá comentários sobre o projeto e possíveis melhorias.
-<br>
-<br>
-<strong>ATENÇÃO</strong>:
- - Não faça nenhuma alteração na branch <strong>prod</strong>.
- - Jamais faça push diretamente na <strong>dev</strong> ou <strong>prod</strong>.
- -  Não aceite o pull request de sua branch para a <strong>dev</strong> sem a aprovação do grupo.
+This project is a starting point for a Flutter application.
 
-## Pull Request
-O pull request deve ser feito da branch do aluno para a <strong>dev</strong>.<br>
+A few resources to get you started if this is your first Flutter project:
 
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-## Commits 
-Para os commits, siga os <strong>[conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)</strong> para facilitar a leitura do histórico do projeto.
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
 
-Boas práticas:
-- Commits pequenos e frequentes.
-- Mensagens claras e objetivas.
-
-Base:
-
-
-```
-<tipo>(<escopo>): <resumo curto>
-  │       │             │
-  │       │             └─⫸ Resumo no presente. Não capitalizado. Sem ponto final no final.
-  │       │
-  │       └─⫸ Escopo do commit: geralmente o nome do módulo afetado
-  │
-  └─⫸ Tipo do commit: build|ci|docs|feat|fix|perf|refactor|test
-```
-
-## Conclusão
-
-Siga as instruções do professor e boa sorte! 😎
