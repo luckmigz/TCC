@@ -15,7 +15,6 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def decode_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"Payload decodificado: {payload}")
         if payload.get("sub") is None:
             print("Token inválido: 'sub' ausente")
             return None

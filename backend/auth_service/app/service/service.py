@@ -62,6 +62,10 @@ async def get_current_restaurant(token: str):
     email = decode_token(token)
     if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
+    
+    email = email.get("sub")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
 
     async with httpx.AsyncClient() as client:
         try:
