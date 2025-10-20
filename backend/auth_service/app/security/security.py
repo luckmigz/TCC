@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
-SECRET_KEY =  "your_default_secret_key"
+SECRET_KEY =  "Deixa_o_tempo_passar"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
