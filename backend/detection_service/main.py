@@ -1,14 +1,18 @@
 from fastapi import FastAPI
-from .routes import detection
+from routes import camera_routes
+import uvicorn
 
-app = FastAPI(
-    title="Detection Service API",
-    description="API para obter dados de detecção de objetos.",
-    version="1.0.0"
-)
+# O app é definido ANTES do uvicorn.run
+app = FastAPI(title="IA Camera Service", version="1.0")
 
-app.include_router(detection.router, prefix="/api")
+# Inclui as rotas definidas em camera_routes.py
+app.include_router(camera_routes.router, prefix="/camera", tags=["Camera"])
 
-@app.get("/", tags=["Root"])
-async def read_root():
-    return {"message": "Bem-vindo à API do Serviço de Detecção."}
+@app.get("/")
+async def root():
+    return {"message": "IA Camera Service ativo 🚀"}
+
+# O uvicorn.run deve verificar o __name__ para permitir a importação do 'app'
+if __name__ == "__main__":
+    # Recarrega o serviço quando o código é alterado
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
