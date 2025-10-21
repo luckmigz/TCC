@@ -2,6 +2,10 @@ import datetime
 from collections import deque
 
 class Restaurante:
+    """
+    Representa o estado e métricas de um restaurante monitorado.
+    """
+
     def __init__(self, cnpj: str, nome: str):
         self.cnpj = cnpj
         self.nome = nome
@@ -14,8 +18,11 @@ class Restaurante:
         self.contador_total = 0
 
     def processar_deteccao_em_tempo_real(self, detections, model_names):
+        """
+        Atualiza as métricas de ocupação com base nas detecções.
+        """
         contagem = {}
-        for class_id in detections.class_id:
+        for class_id in getattr(detections, "class_id", []):
             nome = model_names.get(class_id, "desconhecido")
             contagem[nome] = contagem.get(nome, 0) + 1
 
