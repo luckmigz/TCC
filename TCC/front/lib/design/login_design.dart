@@ -21,13 +21,22 @@ class _LoginDesignState extends State<LoginDesign> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(46, 133, 157, 1),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            margin: const EdgeInsets.all(50),
-            padding: const EdgeInsets.all(30),
+            constraints: BoxConstraints(
+              maxWidth: isWeb ? 500 : double.infinity,
+            ),
+            margin: EdgeInsets.symmetric(
+              horizontal: isWeb ? 50 : 20,
+              vertical: 50,
+            ),
+            padding: EdgeInsets.all(isWeb ? 30 : 20),
             decoration: BoxDecoration(
               color: const Color.fromRGBO(239, 251, 252, 1),
               borderRadius: BorderRadius.circular(12),
@@ -37,9 +46,16 @@ class _LoginDesignState extends State<LoginDesign> {
               child: Column(
                 children: [
                   Image.asset(
-                    "logoazul1.png",
-                    height: 150,
+                    "assets/logoazul1.png",
+                    height: isWeb ? 150 : 120,
                     fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.restaurant,
+                        size: isWeb ? 150 : 120,
+                        color: const Color.fromRGBO(46, 133, 157, 1),
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   const Text(

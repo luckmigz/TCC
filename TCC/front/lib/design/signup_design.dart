@@ -39,13 +39,22 @@ class SignUpDesign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
     return Scaffold(
       backgroundColor: const Color.fromRGBO(46, 133, 157, 1),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            margin: const EdgeInsets.all(50),
-            padding: const EdgeInsets.all(30),
+            constraints: BoxConstraints(
+              maxWidth: isWeb ? 600 : double.infinity,
+            ),
+            margin: EdgeInsets.symmetric(
+              horizontal: isWeb ? 50 : 20,
+              vertical: 50,
+            ),
+            padding: EdgeInsets.all(isWeb ? 30 : 20),
             decoration: BoxDecoration(
               color: const Color.fromRGBO(239, 251, 252, 1),
               borderRadius: BorderRadius.circular(12),
@@ -62,16 +71,22 @@ class SignUpDesign extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logo + título
                   Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const SizedBox(height: 20),
                         Image.asset(
-                          "logoazul1.png",
-                          height: 200,
+                          "assets/logoazul1.png",
+                          height: isWeb ? 200 : 150,
                           fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.restaurant,
+                              size: isWeb ? 200 : 150,
+                              color: const Color.fromRGBO(46, 133, 157, 1),
+                            );
+                          },
                         ),
                         const Text(
                           "Sign Up",

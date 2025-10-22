@@ -24,6 +24,9 @@ class PerfilDesign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -35,16 +38,24 @@ class PerfilDesign extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Image.asset(
-              logoAppBarPath,
+              "assets/$logoAppBarPath",
               height: 50,
               fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.restaurant, color: Colors.white);
+              },
             ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isWeb ? 600 : double.infinity,
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(isWeb ? 32.0 : 20.0),
+            child: Column(
           children: [
             const SizedBox(height: 20),
             Container(
@@ -119,6 +130,8 @@ class PerfilDesign extends StatelessWidget {
               ),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );

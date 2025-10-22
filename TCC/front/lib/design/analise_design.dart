@@ -35,112 +35,136 @@ class AnaliseDesign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Retângulo do gráfico
-          SizedBox(
-            height: 300,
-            child: Container(
-              color: Colors.grey[200],
-              child: const Center(
-                child: Text("Gráfico de Fluxo de Clientes"),
-              ),
-            ),
-          ),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
 
-          const SizedBox(height: 10),
-
-          // 🔹 Cards resumo
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Center(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isWeb ? 1000 : double.infinity,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isWeb ? 32.0 : 16.0),
+          child: Column(
             children: [
-              // Card de clientes
               SizedBox(
-                width: cardWidthClientes,
-                height: cardHeight,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Nº de Clientes",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          numberOfClients.toString(),
-                          style: TextStyle(
-                            fontSize: valueFontSize,
-                          ),
-                        ),
-                      ],
-                    ),
+                height: isWeb ? 400 : 300,
+                child: Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Text("Gráfico de Fluxo de Clientes"),
                   ),
                 ),
               ),
 
-              // Card de mesa
-              SizedBox(
-                width: cardWidthMesa,
-                height: cardHeight,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 10),
+
+              isWeb
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Text(
-                          "Mesa Mais Usada",
-                          style: TextStyle(
-                            fontSize: titleFontSize,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Expanded(
+                          child: _buildClientCard(),
                         ),
-                        Text(
-                          mostUsedTable.toString(),
-                          style: TextStyle(
-                            fontSize: valueFontSize,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildTableCard(),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        _buildClientCard(),
+                        const SizedBox(height: 10),
+                        _buildTableCard(),
+                      ],
+                    ),
+              const SizedBox(height: 20),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: testsList.length,
+                  itemBuilder: (context, index) {
+                    return ExpansionTile(
+                      title: Text(testsList[index]),
+                      trailing: const Icon(Icons.chevron_right),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Text(
+                            "Aqui você pode colocar informações detalhadas sobre ${testsList[index]}",
+                            style: const TextStyle(fontSize: 14, color: Colors.black54),
                           ),
                         ),
                       ],
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 20),
-
-          // Lista expandível de testes
-          Expanded(
-            child: ListView.builder(
-              itemCount: testsList.length,
-              itemBuilder: (context, index) {
-                return ExpansionTile(
-                  title: Text(testsList[index]),
-                  trailing: const Icon(Icons.chevron_right),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text(
-                        "Aqui você pode colocar informações detalhadas sobre ${testsList[index]}",
-                        style: const TextStyle(fontSize: 14, color: Colors.black54),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  Widget _buildClientCard() {
+    return SizedBox(
+      height: cardHeight,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Nº de Clientes",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                numberOfClients.toString(),
+                style: TextStyle(
+                  fontSize: valueFontSize,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableCard() {
+    return SizedBox(
+      height: cardHeight,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "Mesa Mais Usada",
+                style: TextStyle(
+                  fontSize: titleFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                mostUsedTable.toString(),
+                style: TextStyle(
+                  fontSize: valueFontSize,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
   }
 }

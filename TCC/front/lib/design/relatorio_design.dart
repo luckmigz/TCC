@@ -41,9 +41,12 @@ class RelatorioDesign extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Image.asset(
-              "logo.png",
+              "assets/logo.png",
               height: 45,
               fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.restaurant, color: Colors.white);
+              },
             ),
           ),
         ],
@@ -59,10 +62,17 @@ class RelatorioDesign extends StatelessWidget {
   }
 
   Widget _relatorioContent(BuildContext context, String periodo) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: isWeb ? 600 : double.infinity,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(isWeb ? 32.0 : 20.0),
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -107,6 +117,8 @@ class RelatorioDesign extends StatelessWidget {
               ),
             ),
           ],
+        ),
+          ),
         ),
       ),
     );

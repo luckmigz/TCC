@@ -26,6 +26,9 @@ class HomeDesign extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWeb = screenWidth > 600;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -37,73 +40,87 @@ class HomeDesign extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: Image.asset(
-              logoAppBarPath,
+              "assets/$logoAppBarPath",
               height: 50,
               fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.restaurant, color: Colors.white);
+              },
             ),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Gráfico de fluxo de clientes
-            Expanded(
-              child: Container(
-                color: Colors.grey[200],
-                child: const Center(
-                  child: Text("Gráfico de Fluxo de Clientes"),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Card: mesas ocupadas
-            Card(
-              child: SizedBox(
-                width: double.infinity,
-                height: 80,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event_seat, size: 40, color: iconColor),
-                      const SizedBox(width: 12),
-                      Text(
-                        "$mesasOcupadas/$mesasTotais Mesas Ocupadas",
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ],
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: isWeb ? 800 : double.infinity,
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(isWeb ? 32.0 : 16.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Text("Gráfico de Fluxo de Clientes"),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
-            // Card: tempo de ocupação
-            Card(
-              child: SizedBox(
-                width: double.infinity,
-                height: 80,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(Icons.timer, size: 40, color: iconColor),
-                      const SizedBox(width: 12),
-                      Text(
-                        "Mesa $mesaMaisRecente está ocupada há $tempoOcupacaoMin min",
-                        style: const TextStyle(fontSize: 20),
+                Card(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 80,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_seat, size: 40, color: iconColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "$mesasOcupadas/$mesasTotais Mesas Ocupadas",
+                              style: TextStyle(fontSize: isWeb ? 20 : 18),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 10),
+
+                Card(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 80,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(Icons.timer, size: 40, color: iconColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              "Mesa $mesaMaisRecente está ocupada há $tempoOcupacaoMin min",
+                              style: TextStyle(fontSize: isWeb ? 20 : 16),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
