@@ -68,7 +68,7 @@ def obter_frame_unico() -> np.ndarray:
     return frame
 
 
-def gerar_deteccoes_periodicas(intervalo_segundos: float = 5.0, salvar_frame_debug: bool = False
+def gerar_deteccoes_periodicas(intervalo_segundos: float = 5.0, salvar_frame_debug: bool = False 
                                ) -> Generator[Tuple[sv.Detections, Dict[int, str]], None, None]:
     """
     Gera detecções em intervalos, sem janela de vídeo.

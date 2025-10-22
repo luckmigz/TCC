@@ -3,8 +3,9 @@ import asyncio
 from typing import Dict, Optional, Any, List
 from datetime import datetime
 
-from service.detector_utils import gerar_deteccoes_continuas
+from service.detector_utils import gerar_deteccoes_periodicas
 from service.mongo_sender import enviar_dados_crus
+
 
 class MonitorSession:
     def __init__(self, cnpj: str, rtsp: str, interval_seconds: float = 60.0):
@@ -28,6 +29,7 @@ class MonitorSession:
             "interval_seconds": self.interval_seconds,
         }
 
+
 class MonitorManager:
     def __init__(self):
         self._sessions: Dict[str, MonitorSession] = {}
@@ -49,9 +51,11 @@ class MonitorManager:
 
         async def _worker():
             try:
-                async for detections, nomes in gerar_deteccoes_continuas(
-                    rtsp_url=session.rtsp, intervalo_segundos=session.interval_seconds
+                # Gerador leve: YOLO + LLaMA
+                async for detections, nomes, visao_llama in gerar_deteccoes_periodicas(
+                    intervalo_segundos=session.interval_seconds
                 ):
+                    # YOLO → monta lista de detecções
                     raw_list: List[Dict[str, Any]] = []
                     for xyxy, conf, cls, tid in zip(
                         getattr(detections, "xyxy", []),
@@ -67,9 +71,13 @@ class MonitorManager:
                             "bbox": [x1, y1, x2, y2],
                             "track_id": int(tid) if tid is not None else None,
                         })
-                    await enviar_dados_crus(session.cnpj, session.rtsp, raw_list)
+
+                    # Envia ambas as visões para o banco
+                    await enviar_dados_crus(session.cnpj, session.rtsp, raw_list, visao_llama)
+
                     session.frames_ok += 1
                     session.last_save_at = datetime.utcnow()
+
             except asyncio.CancelledError:
                 pass
             except Exception as e:
@@ -97,4 +105,6 @@ class MonitorManager:
         session = self._sessions.get(cnpj)
         return session.status() if session else None
 
+
+# Instância global para uso no sistema
 manager = MonitorManager()
