@@ -8,7 +8,7 @@ const String baseUrl = "https://tcc-user-db-530d29de8ef0.herokuapp.com";
 
 class ApiService {
   // Instância para armazenamento seguro do token
-  static final _storage = const FlutterSecureStorage();
+  static const _storage = FlutterSecureStorage();
 
   // Método privado para obter o token armazenado
   static Future<String?> _getToken() async {

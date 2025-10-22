@@ -15,10 +15,10 @@ class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   List<Widget> get _pages =>  [
-    HomePage(),
-    AnalisePage(),
-    RelatorioPage(),
-    PerfilPage(),
+    const HomePage(),
+    const AnalisePage(),
+    const RelatorioPage(),
+    const PerfilPage(),
   ];
 
   void _onItemTapped(int index) {
