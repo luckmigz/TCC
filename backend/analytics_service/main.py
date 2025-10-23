@@ -1,4 +1,5 @@
 # main.py
+import os
 from fastapi import FastAPI
 import uvicorn
 from routes import analytics_routes
@@ -6,7 +7,7 @@ from routes import analytics_routes
 
 app = FastAPI(title="IA Camera Service", version="1.0")
 
-# Prefixo /camera (como você já fazia)
+
 app.include_router(analytics_routes.router)
 
 @app.get("/")
