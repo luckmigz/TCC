@@ -9,6 +9,7 @@ MONGO_URI = "mongodb+srv://darknnes99:sEnh4d0crl4@usuarios.nvvj4tz.mongodb.net/?
 DB_NAME = "analytics"
 COLLECTION_RAW = "raw_detections"
 
+
 OBJETOS_INTERESSE = ["chair", "dining table", "person"]
 INTERVALO_GRAFICO_MIN = 2
 JANELA_CURTO_PRAZO_MIN = 5
@@ -21,7 +22,7 @@ JANELA_LONGO_PRAZO_MIN = 60
 # =====================================================
 async def obter_colecao(nome_colecao: str):
     client = AsyncIOMotorClient(MONGO_URI)
-    db = client[DB_NAME]
+    db = client["Usuarios"]
     return db[nome_colecao]
 
 
