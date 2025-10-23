@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, List, Any
 from motor.motor_asyncio import AsyncIOMotorClient
+import os
 
 # --- Configurações ---
 MONGO_URI = "mongodb+srv://darknnes99:sEnh4d0crl4@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios"
