@@ -2,7 +2,7 @@
 import os
 from fastapi import FastAPI
 import uvicorn
-from routes import analytics_routes
+from .routes import analytics_routes
 
 
 app = FastAPI(title="IA Camera Service", version="1.0")
