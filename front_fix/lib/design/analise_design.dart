@@ -20,7 +20,7 @@ class _AnaliseDesignState extends State<AnaliseDesign> {
 
   Future<void> _fetchData() async {
     try {
-      final data = await ApiService.getMe();
+      final data = await ApiService.getMe(context as String);
       setState(() => _userData = data);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

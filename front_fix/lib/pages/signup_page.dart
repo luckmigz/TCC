@@ -36,7 +36,7 @@ class _SignUpPageState extends State<SignUpPage> {
       tables8Controller: _tables8Controller,
       onSignUp: (name, email, password) async {
         // Salva o usuário em memória
-        final user = User(name: name, email: email);
+        final user = User(name: name, email: email, cnpj: '');
         await UserService.saveUser(user);
 
         ScaffoldMessenger.of(context).showSnackBar(
