@@ -266,11 +266,13 @@ class ApiService {
         body: jsonEncode({"cnpj": cnpj}),
       );
     });
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Erro ao obter dados de analytics: ${response.body}");
-    }
+if (response.statusCode == 200 || response.statusCode == 201) {
+    final data = jsonDecode(response.body);
+   
+    return data;
+  } else {
+ 
+    throw Exception("Erro ao obter dados de analytics: ${response.body}");
+  }
   }
 }

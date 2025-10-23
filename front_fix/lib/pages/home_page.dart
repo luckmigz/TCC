@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../services/user_service.dart';
 import '../services/api_service.dart';
+import '../design/home_design.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,83 +11,92 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<FlSpot> fluxoPessoas = [];
   bool carregando = true;
   String erro = '';
+  Map<String, dynamic>? analyticsData;
 
   @override
   void initState() {
     super.initState();
-    _carregarFluxoPessoas();
+    _carregarDados();
   }
 
-  Future<void> _carregarFluxoPessoas() async {
+  Future<void> _carregarDados() async {
+    setState(() {
+      carregando = true;
+      erro = '';
+    });
+
     try {
-      final String cnpj = UserService.cnpj;
+      final user = await ApiService.getMe();
+      final cnpj = user['cnpj'] ?? '';
+
+      if (cnpj.isEmpty) {
+        throw Exception("CNPJ não encontrado no perfil do restaurante");
+      }
+
       final data = await ApiService.getAnalyticsData(cnpj);
-
-      // Espera-se algo como: { "fluxo": [ {"timestamp": "...", "pessoas": 10}, ... ] }
-      final List<dynamic> fluxo = data['fluxo'] ?? [];
-
-      setState(() {
-        fluxoPessoas = List<FlSpot>.generate(
-          fluxo.length,
-          (i) => FlSpot(
-            i.toDouble(),
-            (fluxo[i]['pessoas'] as num).toDouble(),
-          ),
-        );
-        carregando = false;
-      });
+      setState(() => analyticsData = data);
     } catch (e) {
       setState(() {
-        erro = 'Erro: $e';
-        carregando = false;
+        erro = 'Erro ao carregar dados: $e';
       });
+    } finally {
+      setState(() => carregando = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Fluxo de Pessoas',
-          style: TextStyle(fontWeight: FontWeight.bold),
+    if (carregando) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (erro.isNotEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Análises de Fluxo'),
+          backgroundColor: const Color.fromRGBO(46, 133, 157, 1),
         ),
-        backgroundColor: const Color.fromRGBO(225, 105, 30, 1),
-      ),
-      body: Center(
-        child: carregando
-            ? const CircularProgressIndicator()
-            : erro.isNotEmpty
-                ? Text(erro, style: const TextStyle(color: Colors.red))
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: LineChart(
-                      LineChartData(
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: true),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                        ),
-                        gridData: FlGridData(show: true),
-                        borderData: FlBorderData(show: true),
-                        lineBarsData: [
-                          LineChartBarData(
-                            isCurved: true,
-                            color: const Color.fromRGBO(225, 105, 30, 1),
-                            spots: fluxoPessoas,
-                            belowBarData: BarAreaData(show: false),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-      ),
+        body: Center(
+          child: Text(
+            erro,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    final yolo = analyticsData?['yolo_analysis'] ?? {};
+    final llama = analyticsData?['llama_analysis'] ?? {};
+
+    // === YOLO MÉTRICAS ===
+    final mediaYolo = (yolo['media_total'] ?? 0).toDouble();
+    final picoYolo = (yolo['pico_total'] ?? 0).toInt();
+    final totalYolo = (yolo['quantidade_atual']?['person'] ?? 0).toInt();
+
+    // === LLAMA MÉTRICAS ===
+    final mediaLlama = (llama['media_total']?['person'] ?? 0).toDouble();
+    final picoLlama = (llama['pico_total']?['person'] ?? 0).toInt();
+    final totalLlama = (llama['quantidade_atual']?['person'] ?? 0).toInt();
+
+    // === MOCK DE GRÁFICO (substituir pelo histórico do backend quando disponível) ===
+    final fluxoPessoas = List.generate(
+      10,
+      (i) => FlSpot(i.toDouble(), (i * 0.8 + 1.5)),
+    );
+
+    return HomeDesign(
+      fluxoPessoas: fluxoPessoas,
+      totalYolo: totalYolo,
+      picoYolo: picoYolo,
+      mediaYolo: mediaYolo,
+      totalLlama: totalLlama,
+      picoLlama: picoLlama,
+      mediaLlama: mediaLlama,
     );
   }
 }
