@@ -20,7 +20,7 @@ class _RelatorioDesignState extends State<RelatorioDesign> {
 
   Future<void> _fetchRelatorio() async {
     try {
-      final data = await ApiService.getMe(context as String);
+      final data = await ApiService.getMe();
       setState(() => _relatorio = data);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

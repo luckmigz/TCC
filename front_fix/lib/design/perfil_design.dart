@@ -20,7 +20,7 @@ class _PerfilDesignState extends State<PerfilDesign> {
 
   Future<void> _loadPerfil() async {
     try {
-      final data = await ApiService.getMe(context as String);
+      final data = await ApiService.getMe();
       setState(() => _userData = data);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
