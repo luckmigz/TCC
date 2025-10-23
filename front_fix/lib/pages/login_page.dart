@@ -3,9 +3,6 @@ import '../design/login_design.dart';
 import '../services/api_service.dart';
 import 'main_page.dart';
 
-/// Tela wrapper para o Login:
-/// - Verifica se já existe token válido e tenta obter /auth/me
-/// - Se ok, navega direto para a MainPage
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -22,13 +19,19 @@ class _LoginPageState extends State<LoginPage> {
     _autoLogin();
   }
 
+  /// Verifica se há token salvo e se é válido.
   Future<void> _autoLogin() async {
     try {
-      await ApiService.getMe(); // se token for inválido, lançará erro
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainPage()));
-    } catch (_) {
-      // sem token / inválido → segue para tela de login
+      final userData = await ApiService.getMe(); // sem "context as String"
+      if (userData != null && mounted) {
+        // Se o token for válido e a API responder com sucesso, navega pra MainPage
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainPage()),
+        );
+      }
+    } catch (e) {
+      debugPrint("Erro ao verificar login automático: $e");
+      // Se não houver token ou ele for inválido, continua na tela de login
     } finally {
       if (mounted) setState(() => _checking = false);
     }
