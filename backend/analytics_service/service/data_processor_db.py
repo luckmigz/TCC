@@ -25,12 +25,10 @@ async def obter_colecao(nome_colecao: str):
 
 
 # =====================================================
-# 🔹 Função auxiliar para converter tipos BSON → Python
+# 🔹 Funções auxiliares de conversão BSON → Python
 # =====================================================
 def converter_valor_bson(valor):
-    """
-    Converte valores do tipo {'$numberInt': '3'} ou {'$numberDouble': '0.5'} para float/int.
-    """
+    """Converte tipos {'$numberInt': '3'} ou {'$numberDouble': '0.5'} em int/float."""
     if isinstance(valor, dict):
         if "$numberInt" in valor:
             return int(valor["$numberInt"])
@@ -42,9 +40,7 @@ def converter_valor_bson(valor):
 
 
 def converter_timestamp_bson(ts_raw):
-    """
-    Converte timestamp no formato {'$date': {'$numberLong': '1761190423439'}} para datetime UTC.
-    """
+    """Converte {'$date': {'$numberLong': '1761190423439'}} → datetime UTC."""
     if isinstance(ts_raw, dict) and "$date" in ts_raw:
         inner = ts_raw["$date"]
         if isinstance(inner, dict) and "$numberLong" in inner:
@@ -54,15 +50,17 @@ def converter_timestamp_bson(ts_raw):
 
 
 # =====================================================
-# 🔹 Busca e separação YOLO / LLaMA
+# 🔹 Busca dados YOLO / LLaMA no Mongo (sem filtro de tempo)
 # =====================================================
 async def buscar_dados_mongo_duplo(cnpj: str, limite_minutos: int = 120):
+    """
+    Busca todas as detecções no MongoDB filtrando apenas pelo CNPJ.
+    Retorna dois DataFrames: (df_yolo, df_llama)
+    """
     colecao = await obter_colecao(COLLECTION_RAW)
-    limite_tempo = datetime.utcnow() - pd.Timedelta(minutes=limite_minutos)
 
     cursor = colecao.find({
-        "$or": [{"cnpj": cnpj}, {"CNPJ": cnpj}],
-        "timestamp": {"$exists": True}
+        "$or": [{"cnpj": cnpj}, {"CNPJ": cnpj}]
     })
 
     docs = await cursor.to_list(length=None)
@@ -76,7 +74,7 @@ async def buscar_dados_mongo_duplo(cnpj: str, limite_minutos: int = 120):
     for doc in docs:
         ts = converter_timestamp_bson(doc.get("timestamp"))
 
-        # YOLO
+        # --- YOLO ---
         for det in doc.get("detections_yolo", []):
             label = str(det.get("label", "")).replace("_", " ").lower()
             conf = converter_valor_bson(det.get("confidence", 0))
@@ -86,7 +84,7 @@ async def buscar_dados_mongo_duplo(cnpj: str, limite_minutos: int = 120):
                 "confidence": conf
             })
 
-        # LLaMA
+        # --- LLaMA ---
         visao_llama = doc.get("detections_llama", {})
         if isinstance(visao_llama, dict):
             for label, valor in visao_llama.items():
