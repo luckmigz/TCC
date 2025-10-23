@@ -1,7 +1,7 @@
 class User {
   final String name;
   final String email;
-  final String cnpj;
+  final String cnpj; // 🔹 Adicionado
 
   User({
     required this.name,
