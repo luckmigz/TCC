@@ -183,22 +183,31 @@ def calcular_metricas_yolo(df):
     if df.empty:
         return gerar_metricas_vazias("YOLO")
 
+    # Normalização
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
     df = df.dropna(subset=["timestamp"])
     df["label"] = df["label"].str.replace("_", " ").str.lower()
     df = df[df["label"].isin(OBJETOS_INTERESSE)]
+    if df.empty:
+        return gerar_metricas_vazias("YOLO")
 
-    df["timestamp_min"] = df["timestamp"].dt.floor("1min")
-    contagem_por_frame = df[df["label"] == "person"].groupby("timestamp_min").size()
+    # 🔹 Quantidade atual = contagem no ÚLTIMO FRAME
+    ultimo_ts = df["timestamp"].max()
+    df_atual = df[df["timestamp"] == ultimo_ts]
+    contagem_atual = df_atual.groupby("label").size().to_dict()
+    quantidade_atual = {obj.replace(" ", "_"): int(contagem_atual.get(obj, 0)) for obj in OBJETOS_INTERESSE}
+
+    # 🔹 Métricas corretas por FRAME (não por minuto)
+    #   - contagem de pessoas em cada frame
+    df_pessoas = df[df["label"] == "person"].copy()
+    contagem_por_frame = (
+        df_pessoas.groupby("timestamp").size()  # cada linha = nº de pessoas naquele frame
+    )
 
     media_total = round(contagem_por_frame.mean(), 2) if not contagem_por_frame.empty else 0.0
     pico_total = int(contagem_por_frame.max()) if not contagem_por_frame.empty else 0
 
-    ultimo_timestamp = df["timestamp_min"].max()
-    df_atual = df[df["timestamp_min"] == ultimo_timestamp]
-    contagem_atual = df_atual.groupby("label").size().to_dict()
-    quantidade_atual = {obj.replace(" ", "_"): contagem_atual.get(obj, 0) for obj in OBJETOS_INTERESSE}
-
+    # 🔹 Razão pessoa/cadeira no último frame (como antes)
     cadeiras = quantidade_atual.get("chair", 0)
     pessoas = quantidade_atual.get("person", 0)
     razao_pessoa_cadeira = round(pessoas / cadeiras, 2) if cadeiras > 0 else ("inf" if pessoas > 0 else 0.0)
@@ -206,8 +215,8 @@ def calcular_metricas_yolo(df):
     return {
         "fonte": "YOLO",
         "quantidade_atual": quantidade_atual,
-        "media_total": media_total,
-        "pico_total": pico_total,
+        "media_total": media_total,  # média por frame
+        "pico_total": pico_total,    # pico por frame
         "razao_pessoa_cadeira": razao_pessoa_cadeira,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
