@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from typing import Dict, Any
+import re
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # --- Configurações ---
@@ -51,31 +52,45 @@ def converter_timestamp_bson(ts_raw):
 # =====================================================
 async def buscar_dados_mongo_duplo(cnpj: str):
     colecao = await obter_colecao(COLLECTION_RAW)
-    query = {"$or": [{"cnpj": cnpj}, {"CNPJ": cnpj}]}
 
-    print(f"\n[DEBUG] 🔎 Executando busca Mongo para CNPJ={cnpj}")
+    # 🔹 Normaliza o CNPJ (remove tudo que não é número)
+    cnpj_limpo = re.sub(r'\D', '', str(cnpj).strip())
+
+    query = {
+        "$or": [
+            {"cnpj": cnpj_limpo},
+            {"CNPJ": cnpj_limpo},
+            {"cnpj": int(cnpj_limpo)} if cnpj_limpo.isdigit() else {},
+            {"CNPJ": int(cnpj_limpo)} if cnpj_limpo.isdigit() else {}
+        ]
+    }
+
+    print(f"\n[DEBUG] 🔎 Buscando Mongo por CNPJ={cnpj_limpo} (normalizado)")
     cursor = colecao.find(query)
-    docs = await cursor.to_list(length=20)
-    print(f"[DEBUG] 📦 {len(docs)} documentos encontrados")
+    docs = await cursor.to_list(length=10)
+    print(f"[DEBUG] 📦 {len(docs)} documentos encontrados para query: {query}")
 
     if not docs:
-        print("[DEBUG] ⚠️ Nenhum documento encontrado.")
+        print("[DEBUG] ⚠️ Nenhum documento encontrado. Tipos esperados: str/int.")
         df_vazio = pd.DataFrame(columns=["timestamp", "label"])
         return df_vazio, df_vazio
 
     registros_yolo, registros_llama = [], []
 
     for i, doc in enumerate(docs):
-        ts = converter_timestamp_bson(doc.get("timestamp"))
         if i == 0:
-            print(f"[DEBUG] 🕓 Exemplo timestamp bruto: {doc.get('timestamp')}")
-            print(f"[DEBUG] 🕓 Convertido → {ts}")
+            print(f"[DEBUG] 🧾 Exemplo doc: keys={list(doc.keys())}")
+            print(f"[DEBUG] 🧾 CNPJ salvo: {doc.get('cnpj') or doc.get('CNPJ')} ({type(doc.get('cnpj') or doc.get('CNPJ'))})")
 
+        ts = converter_timestamp_bson(doc.get("timestamp"))
+
+        # YOLO
         for det in doc.get("detections_yolo", []):
             label = str(det.get("label", "")).replace("_", " ").lower()
             conf = converter_valor_bson(det.get("confidence", 0))
             registros_yolo.append({"timestamp": ts, "label": label, "confidence": conf})
 
+        # LLaMA
         visao_llama = doc.get("detections_llama", {})
         if isinstance(visao_llama, dict):
             for label, valor in visao_llama.items():
@@ -90,11 +105,6 @@ async def buscar_dados_mongo_duplo(cnpj: str):
     df_llama = pd.DataFrame(registros_llama)
 
     print(f"[DEBUG] 📊 YOLO linhas: {len(df_yolo)} | LLaMA linhas: {len(df_llama)}")
-    if not df_yolo.empty:
-        print(f"[DEBUG] 🔸 Exemplo YOLO:\n{df_yolo.head(3)}")
-    if not df_llama.empty:
-        print(f"[DEBUG] 🔸 Exemplo LLaMA:\n{df_llama.head(3)}")
-
     return df_yolo, df_llama
 
 
