@@ -11,8 +11,6 @@ COLLECTION_RAW = "raw_detections"
 
 OBJETOS_INTERESSE = ["chair", "dining table", "person"]
 INTERVALO_GRAFICO_MIN = 2
-JANELA_CURTO_PRAZO_MIN = 5
-JANELA_LONGO_PRAZO_MIN = 60
 # ---
 
 
@@ -191,18 +189,15 @@ def calcular_metricas_yolo(df):
     df = df[df["label"].isin(OBJETOS_INTERESSE)]
 
     df["timestamp_min"] = df["timestamp"].dt.floor("1min")
+    contagem_por_frame = df[df["label"] == "person"].groupby("timestamp_min").size()
+
+    media_total = round(contagem_por_frame.mean(), 2) if not contagem_por_frame.empty else 0.0
+    pico_total = int(contagem_por_frame.max()) if not contagem_por_frame.empty else 0
+
     ultimo_timestamp = df["timestamp_min"].max()
     df_atual = df[df["timestamp_min"] == ultimo_timestamp]
-
     contagem_atual = df_atual.groupby("label").size().to_dict()
     quantidade_atual = {obj.replace(" ", "_"): contagem_atual.get(obj, 0) for obj in OBJETOS_INTERESSE}
-
-    # Cálculo de médias e pico
-    limite_1h = pd.Timestamp.utcnow() - pd.Timedelta(minutes=JANELA_LONGO_PRAZO_MIN)
-    df_pessoas_1h = df[(df["timestamp"] > limite_1h) & (df["label"] == "person")]
-    contagem_por_frame_1h = df_pessoas_1h.groupby("timestamp_min").size()
-    media_pessoas_1h = round(contagem_por_frame_1h.mean(), 2) if not contagem_por_frame_1h.empty else 0.0
-    pico_pessoas_1h = int(contagem_por_frame_1h.max()) if not contagem_por_frame_1h.empty else 0
 
     cadeiras = quantidade_atual.get("chair", 0)
     pessoas = quantidade_atual.get("person", 0)
@@ -211,8 +206,8 @@ def calcular_metricas_yolo(df):
     return {
         "fonte": "YOLO",
         "quantidade_atual": quantidade_atual,
-        "media_pessoas_1h": media_pessoas_1h,
-        "pico_pessoas_1h": pico_pessoas_1h,
+        "media_total": media_total,
+        "pico_total": pico_total,
         "razao_pessoa_cadeira": razao_pessoa_cadeira,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -233,9 +228,8 @@ def calcular_metricas_llama(df):
     pivot = df.pivot_table(index="timestamp", columns="label", values="contagem", fill_value=0)
     ultimo = pivot.tail(1).to_dict(orient="records")[0] if not pivot.empty else {}
 
-    # 🆕 cálculo de picos LLaMA
-    pico_por_label = {lbl.replace(" ", "_"): int(pivot[lbl].max()) for lbl in pivot.columns}
-    media_1h = pivot.mean().to_dict()
+    media_total = {k.replace(" ", "_"): round(v, 2) for k, v in pivot.mean().to_dict().items()}
+    pico_total = {k.replace(" ", "_"): int(v) for k, v in pivot.max().to_dict().items()}
 
     razao_pessoa_cadeira = 0.0
     if "chair" in ultimo and "person" in ultimo:
@@ -246,8 +240,8 @@ def calcular_metricas_llama(df):
     return {
         "fonte": "LLaMA",
         "quantidade_atual": {k.replace(" ", "_"): int(v) for k, v in ultimo.items()},
-        "media_1h": {k.replace(" ", "_"): round(v, 2) for k, v in media_1h.items()},
-        "picos": pico_por_label,  # <-- 🆕 picos separados para cada label
+        "media_total": media_total,
+        "pico_total": pico_total,
         "razao_pessoa_cadeira": razao_pessoa_cadeira,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -260,9 +254,8 @@ def gerar_metricas_vazias(fonte: str = "YOLO"):
     return {
         "fonte": fonte,
         "quantidade_atual": {"person": 0, "chair": 0, "dining_table": 0},
-        "media_pessoas_1h": 0.0,
-        "pico_pessoas_1h": 0,
-        "picos": {"person": 0, "chair": 0, "dining_table": 0},
+        "media_total": 0.0,
+        "pico_total": 0,
         "razao_pessoa_cadeira": 0.0,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -278,8 +271,14 @@ async def gerar_analises_duplas(cnpj: str) -> Dict[str, Any]:
     return {
         "yolo_analysis": analise_yolo,
         "llama_analysis": analise_llama,
-        "picos": {
-            "YOLO": analise_yolo.get("pico_pessoas_1h", 0),
-            "LLaMA": analise_llama.get("picos", {})
-        }
+        "resumo": {
+            "media_total": {
+                "YOLO": analise_yolo.get("media_total", 0),
+                "LLaMA": analise_llama.get("media_total", {}),
+            },
+            "pico_total": {
+                "YOLO": analise_yolo.get("pico_total", 0),
+                "LLaMA": analise_llama.get("pico_total", {}),
+            },
+        },
     }
