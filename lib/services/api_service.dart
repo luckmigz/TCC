@@ -21,7 +21,7 @@ class ApiService {
       body: jsonEncode({
         "email": email,
         "password": password,
-        "login_as": loginAs, // "restaurant" ou "user"
+        "login_as": loginAs,
       }),
     );
 
