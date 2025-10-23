@@ -1,0 +1,58 @@
+# Arquivos de metadados e cache do Dart/Pub
+.dart_tool/
+.packages
+pubspec.lock
+
+# Arquivos gerados pelo build_runner (muito comum)
+*.g.dart
+*.freezed.dart
+
+# Diretório de build principal do Flutter
+build/
+
+# Artefatos de build específicos do Android
+android/app/build/
+android/.gradle/
+android/local.properties
+
+# Artefatos de build específicos do iOS/macOS
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/engine.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Artefatos de build específicos do macOS
+macos/Pods/
+macos/Runner.xcworkspace/
+macos/Runner.xcodeproj/project.xcworkspace/
+macos/Runner.xcodeproj/xcuserdata/
+macos/.symlinks/
+macos/Flutter/ephemeral/
+macos/Flutter/Generated.xcconfig
+
+# Artefatos de build específicos do Linux
+linux/flutter/ephemeral/
+
+# Artefatos de build específicos do Windows
+windows/flutter/ephemeral/
+
+# Arquivos de IDE e Editores
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Arquivos de log e sistema operacional
+*.log
+.DS_Store
+
+# Arquivos de configuração local/segredos (Exemplos)
+# É uma boa prática não versionar chaves de API e segredos
+*.env
+lib/secrets.dart
