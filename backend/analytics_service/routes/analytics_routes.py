@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Dict, Any
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-from service.data_processor_db import gerar_analises_duplas
+from ..service.data_processor_db import gerar_analises_duplas
 
 # --- Configurações Mongo ---
 MONGO_URI = "mongodb+srv://darknnes99:sEnh4d0crl4@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios"
