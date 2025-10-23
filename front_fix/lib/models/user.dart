@@ -1,23 +1,29 @@
 class User {
   final String name;
   final String email;
-  final String password;
-  final String cpf;
+  final String cnpj;
 
   User({
     required this.name,
     required this.email,
-    required this.password,
-    required this.cpf,
+    required this.cnpj,
   });
 
-  // --- ADICIONE ESTE MÉTODO ---
+  // Cria um User a partir de um JSON do backend
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      cnpj: json['cnpj'] ?? '',
+    );
+  }
+
+  // Converte para JSON (se necessário enviar)
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'email': email,
-      'password': password,
-      'cpf': cpf,
+      'cnpj': cnpj,
     };
   }
 }

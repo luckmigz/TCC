@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-// 🔧 Coloque aqui a URL base do seu backend no Heroku
+// 🌐 URLs base dos microserviços
 const String authURL = "https://tcc-user-auth-dbaeb4cec5d9.herokuapp.com";
 const String baseUrl = "https://tcc-user-db-530d29de8ef0.herokuapp.com";
+const String analyticsURL = "http://0.0.0.0:8000"; // FastAPI local (IA e Analytics)
 
 class ApiService {
   // ===============================
@@ -160,6 +161,24 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception("Erro ao atualizar ocupação: ${response.body}");
+    }
+  }
+
+  // ===============================
+  // 📊 ANALYTICS
+  // ===============================
+  static Future<Map<String, dynamic>> getAnalyticsData(String cnpj) async {
+    final url = Uri.parse("$analyticsURL/analytics/generate");
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"cnpj": cnpj}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Erro ao obter dados de analytics: ${response.body}");
     }
   }
 }

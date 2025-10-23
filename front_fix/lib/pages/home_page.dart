@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
 import '../services/user_service.dart';
+import '../services/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,35 +23,22 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _carregarFluxoPessoas() async {
     try {
-      final String cnpj = UserService.cnpj; // obtém o CNPJ salvo no serviço
-      final response = await http.post(
-        Uri.parse("http://0.0.0.0:8000/analytics/generate"),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"cnpj": cnpj}),
-      );
+      final String cnpj = UserService.cnpj;
+      final data = await ApiService.getAnalyticsData(cnpj);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      // Espera-se algo como: { "fluxo": [ {"timestamp": "...", "pessoas": 10}, ... ] }
+      final List<dynamic> fluxo = data['fluxo'] ?? [];
 
-        // Espera-se algo como: { "fluxo": [ {"timestamp": "...", "pessoas": 10}, ... ] }
-        final List<dynamic> fluxo = data['fluxo'] ?? [];
-
-        setState(() {
-          fluxoPessoas = List<FlSpot>.generate(
-            fluxo.length,
-            (i) => FlSpot(
-              i.toDouble(),
-              (fluxo[i]['pessoas'] as num).toDouble(),
-            ),
-          );
-          carregando = false;
-        });
-      } else {
-        setState(() {
-          erro = 'Erro ao carregar dados (${response.statusCode})';
-          carregando = false;
-        });
-      }
+      setState(() {
+        fluxoPessoas = List<FlSpot>.generate(
+          fluxo.length,
+          (i) => FlSpot(
+            i.toDouble(),
+            (fluxo[i]['pessoas'] as num).toDouble(),
+          ),
+        );
+        carregando = false;
+      });
     } catch (e) {
       setState(() {
         erro = 'Erro: $e';
