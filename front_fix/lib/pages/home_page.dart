@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import '../design/home_design.dart';
+import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -59,11 +60,18 @@ class _HomePageState extends State<HomePage> {
         setState(() => analyticsData = data);
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          erro = 'Erro ao carregar dados: $e';
-        });
+      if (!mounted) return;
+      // Se o token expirou, volta para a tela de login
+      if (e is AuthExpiredException) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
+        return;
       }
+      setState(() {
+        erro = 'Erro ao carregar dados: $e';
+      });
     } finally {
       if (mounted) {
         setState(() => carregando = false);
@@ -101,11 +109,15 @@ class _HomePageState extends State<HomePage> {
     final timestampData =
         analyticsData?['timestamp']?['\$date']?['\$numberLong'];
 
-    final timestampMs = timestampData != null
-        ? int.tryParse(timestampData.toString()) ??
-            DateTime.now().millisecondsSinceEpoch
-        : DateTime.now().millisecondsSinceEpoch;
-    final timestampS = timestampMs ~/ 1000;
+  // Normaliza timestamp vindo da API: aceita segundos ou milissegundos
+  final nowMs = DateTime.now().millisecondsSinceEpoch;
+  final parsedTs = timestampData != null
+    ? int.tryParse(timestampData.toString())
+    : null;
+  final int timestampMs = parsedTs == null
+    ? nowMs
+    : (parsedTs < 1000000000000 ? parsedTs * 1000 : parsedTs); // se vier em segundos, converte para ms
+  final double baseX = timestampMs / 1000.0; // segundos como double
 
     // === YOLO ===
     final totalYolo = (yolo['quantidade_atual']?['person'] ?? 0).toDouble();
@@ -119,15 +131,15 @@ class _HomePageState extends State<HomePage> {
 
     // === PONTOS DO GRÁFICO ===
     final fluxoYolo = [
-      FlSpot(timestampS - 3600, mediaYolo),
-      FlSpot(timestampS - 1800, picoYolo),
-      FlSpot(timestampS.toDouble(), totalYolo),
+      FlSpot(baseX - 3600.0, mediaYolo),
+      FlSpot(baseX - 1800.0, picoYolo),
+      FlSpot(baseX, totalYolo),
     ];
 
     final fluxoLlama = [
-      FlSpot(timestampS - 3600, mediaLlama),
-      FlSpot(timestampS - 1800, picoLlama),
-      FlSpot(timestampS.toDouble(), totalLlama),
+      FlSpot(baseX - 3600.0, mediaLlama),
+      FlSpot(baseX - 1800.0, picoLlama),
+      FlSpot(baseX, totalLlama),
     ];
 
     return HomeDesign(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../pages/login_page.dart';
 
 class PerfilDesign extends StatefulWidget {
   const PerfilDesign({super.key});
@@ -23,6 +24,14 @@ class _PerfilDesignState extends State<PerfilDesign> {
       final data = await ApiService.getMe();
       setState(() => _userData = data);
     } catch (e) {
+      if (!mounted) return;
+      if (e is AuthExpiredException) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar perfil: $e')),
       );
@@ -37,7 +46,12 @@ class _PerfilDesignState extends State<PerfilDesign> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Logout realizado com sucesso')),
     );
-    Navigator.of(context).pushReplacementNamed('/login');
+    // Leva para a tela de login e limpa o histórico para não permitir "voltar"
+    
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<void> _deleteAccount() async {
@@ -62,7 +76,10 @@ class _PerfilDesignState extends State<PerfilDesign> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Conta excluída com sucesso')),
       );
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao excluir conta: $e')),

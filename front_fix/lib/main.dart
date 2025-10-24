@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'pages/home_page.dart';
+import 'pages/main_page.dart';
+import 'pages/login_page.dart';
+import 'services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🔹 Modo imersivo: app ocupa toda a tela
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
-  runApp(const MyApp());
+  final user = UserService.getUser(); // Use Future se async
+  runApp(MyApp(isLoggedIn: user != null));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Fluxo de Pessoas',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E859D)),
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
+      title: 'Meu App',
+      home: isLoggedIn ? const MainPage() : const LoginPage(),
     );
   }
 }

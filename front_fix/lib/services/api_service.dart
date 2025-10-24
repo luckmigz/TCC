@@ -12,6 +12,15 @@ const String analyticsURL = "https://tcc-ia-analytics-914b4026a324.herokuapp.com
 // ===============================
 // 🔧 API SERVICE UNIFICADO (com async/await correto)
 // ===============================
+
+// Torna a exceção pública para os widgets poderem capturar
+class AuthExpiredException implements Exception {
+  final String message;
+  const AuthExpiredException([this.message = 'Sessão expirada. Faça login novamente.']);
+  @override
+  String toString() => 'AuthExpiredException: $message';
+}
+
 class ApiService {
   // Armazenamento seguro de token
   static const _storage = FlutterSecureStorage();
@@ -41,10 +50,12 @@ class ApiService {
       final response = await request();
       if (response.statusCode == 401) {
         await _storage.delete(key: 'auth_token');
-        throw Exception('Sessão expirada. Faça login novamente.');
+        throw const AuthExpiredException();
       }
       return response;
-    } catch (_) {
+    } catch (e) {
+      // Propaga sessão expirada; demais erros são convertidos em erro de conexão
+      if (e is AuthExpiredException) rethrow;
       throw Exception('Erro de conexão. Verifique sua rede ou servidor.');
     }
   }
