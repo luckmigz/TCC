@@ -170,17 +170,6 @@ class _PerfilDesignState extends State<PerfilDesign> {
               ),
             ),
             const SizedBox(height: 30),
-            Expanded(
-              child: ListView(
-                children: const [
-                  _UserOption(icon: Icons.person, title: "Account"),
-                  _UserOption(icon: Icons.payments, title: "Payments"),
-                  _UserOption(icon: Icons.devices, title: "Devices"),
-                  _UserOption(icon: Icons.bar_chart, title: "Stats"),
-                  _UserOption(icon: Icons.help_outline, title: "Help"),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -188,19 +177,3 @@ class _PerfilDesignState extends State<PerfilDesign> {
   }
 }
 
-class _UserOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _UserOption({required this.icon, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.black87),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: () {},
-    );
-  }
-}

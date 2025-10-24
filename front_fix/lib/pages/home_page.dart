@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
@@ -14,11 +15,27 @@ class _HomePageState extends State<HomePage> {
   bool carregando = true;
   String erro = '';
   Map<String, dynamic>? analyticsData;
+  Timer? _timer; // 🔁 Timer de atualização automática
 
   @override
   void initState() {
     super.initState();
-    _carregarDados();
+    _carregarDados(); // 🔹 Chamada imediata
+    _iniciarAtualizacaoPeriodica(); // 🔹 Atualização automática
+  }
+
+  void _iniciarAtualizacaoPeriodica() {
+    _timer?.cancel();
+    // Atualiza a cada 5 minutos (300 segundos)
+    _timer = Timer.periodic(const Duration(minutes: 5), (_) {
+      _carregarDados();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // 🔹 Cancela o timer ao sair da tela
+    super.dispose();
   }
 
   Future<void> _carregarDados() async {
@@ -36,25 +53,34 @@ class _HomePageState extends State<HomePage> {
       }
 
       final data = await ApiService.getAnalyticsData(cnpj);
-      setState(() => analyticsData = data);
+
+      // 🔹 Atualiza o estado apenas se o widget ainda estiver montado
+      if (mounted) {
+        setState(() => analyticsData = data);
+      }
     } catch (e) {
-      setState(() {
-        erro = 'Erro ao carregar dados: $e';
-      });
+      if (mounted) {
+        setState(() {
+          erro = 'Erro ao carregar dados: $e';
+        });
+      }
     } finally {
-      setState(() => carregando = false);
+      if (mounted) {
+        setState(() => carregando = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (carregando) {
+    if (carregando && analyticsData == null) {
+      // primeira carga
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (erro.isNotEmpty) {
+    if (erro.isNotEmpty && analyticsData == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Análises de Fluxo'),
@@ -72,30 +98,47 @@ class _HomePageState extends State<HomePage> {
 
     final yolo = analyticsData?['yolo_analysis'] ?? {};
     final llama = analyticsData?['llama_analysis'] ?? {};
+    final timestampData =
+        analyticsData?['timestamp']?['\$date']?['\$numberLong'];
 
-    // === YOLO MÉTRICAS ===
+    final timestampMs = timestampData != null
+        ? int.tryParse(timestampData.toString()) ??
+            DateTime.now().millisecondsSinceEpoch
+        : DateTime.now().millisecondsSinceEpoch;
+    final timestampS = timestampMs ~/ 1000;
+
+    // === YOLO ===
+    final totalYolo = (yolo['quantidade_atual']?['person'] ?? 0).toDouble();
     final mediaYolo = (yolo['media_total'] ?? 0).toDouble();
-    final picoYolo = (yolo['pico_total'] ?? 0).toInt();
-    final totalYolo = (yolo['quantidade_atual']?['person'] ?? 0).toInt();
+    final picoYolo = (yolo['pico_total'] ?? 0).toDouble();
 
-    // === LLAMA MÉTRICAS ===
+    // === LLaMA ===
+    final totalLlama = (llama['quantidade_atual']?['person'] ?? 0).toDouble();
     final mediaLlama = (llama['media_total']?['person'] ?? 0).toDouble();
-    final picoLlama = (llama['pico_total']?['person'] ?? 0).toInt();
-    final totalLlama = (llama['quantidade_atual']?['person'] ?? 0).toInt();
+    final picoLlama = (llama['pico_total']?['person'] ?? 0).toDouble();
 
-    // === MOCK DE GRÁFICO (substituir pelo histórico do backend quando disponível) ===
-    final fluxoPessoas = List.generate(
-      10,
-      (i) => FlSpot(i.toDouble(), (i * 0.8 + 1.5)),
-    );
+    // === PONTOS DO GRÁFICO ===
+    final fluxoYolo = [
+      FlSpot(timestampS - 3600, mediaYolo),
+      FlSpot(timestampS - 1800, picoYolo),
+      FlSpot(timestampS.toDouble(), totalYolo),
+    ];
+
+    final fluxoLlama = [
+      FlSpot(timestampS - 3600, mediaLlama),
+      FlSpot(timestampS - 1800, picoLlama),
+      FlSpot(timestampS.toDouble(), totalLlama),
+    ];
 
     return HomeDesign(
-      fluxoPessoas: fluxoPessoas,
-      totalYolo: totalYolo,
-      picoYolo: picoYolo,
+      logoAppBarPath: 'assets/logo.png',
+      fluxoYolo: fluxoYolo,
+      fluxoLlama: fluxoLlama,
+      totalYolo: totalYolo.toInt(),
+      picoYolo: picoYolo.toInt(),
       mediaYolo: mediaYolo,
-      totalLlama: totalLlama,
-      picoLlama: picoLlama,
+      totalLlama: totalLlama.toInt(),
+      picoLlama: picoLlama.toInt(),
       mediaLlama: mediaLlama,
     );
   }
