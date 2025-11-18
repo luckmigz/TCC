@@ -1,38 +1,33 @@
-# routes/reports_routes.py
-
-from datetime import datetime
-from typing import Dict, Any
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import Dict, Any
+from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
+from ..service.data_processor_db import gerar_analises_duplas
 
-from ..service.reports_generator_db import gerar_relatorio_diario_total
-
-# --- Configurações Mongo (mesmas do analytics_routes) ---
+# --- Configurações Mongo ---
 MONGO_URI = "mongodb+srv://darknnes99:sEnh4d0crl4@usuarios.nvvj4tz.mongodb.net/?retryWrites=true&w=majority&appName=Usuarios"
 DB_NAME = "Usuarios"
-COLLECTION_REPORTS = "analytics_reports"  # nova coleção para relatórios
+COLLECTION_ANALYTICS = "analytics"
 
-
-# --- Cria o router de relatórios ---
-router = APIRouter(prefix="/reports", tags=["Reports"])
+# --- Cria o router principal ---
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 # =====================================================
 # 🔹 Modelo do corpo da requisição
 # =====================================================
-class RelatorioRequest(BaseModel):
+class AnaliseRequest(BaseModel):
     cnpj: str
 
 
 # =====================================================
-# 🔹 Rota POST — gera e salva relatório diário/total
+# 🔹 Rota POST — gera e salva análises
 # =====================================================
 @router.post("/generate", response_model=Dict[str, Any], status_code=201)
-async def gerar_relatorio_route(payload: RelatorioRequest):
+async def gerar_analise_route(payload: AnaliseRequest):
     """
-    Gera e salva um relatório diário + total (YOLO + LLaMA) para o restaurante informado.
+    Gera e salva uma análise (YOLO + LLaMA) para o restaurante informado.
     O frontend deve enviar um JSON com o campo "cnpj".
     Exemplo:
     {
@@ -41,39 +36,38 @@ async def gerar_relatorio_route(payload: RelatorioRequest):
     """
     try:
         cnpj = payload.cnpj
-        print(f"📊 Recebida requisição para gerar RELATÓRIO de {cnpj}...")
+        print(f"📊 Recebida requisição para gerar análise de {cnpj}...")
 
-        # 1️⃣ Gera o relatório (sem mexer em banco)
-        relatorio = await gerar_relatorio_diario_total(cnpj)
-        print("✅ Relatório gerado com sucesso!")
+        # 1️⃣ Gera as análises (usa o módulo de processamento)
+        analises = await gerar_analises_duplas(cnpj)
+        print("✅ Análises geradas com sucesso!")
 
         # 2️⃣ Conecta ao banco e salva o documento
         client = AsyncIOMotorClient(MONGO_URI)
         db = client[DB_NAME]
-        colecao_relatorios = db[COLLECTION_REPORTS]
+        colecao_analises = db[COLLECTION_ANALYTICS]
 
         doc = {
             "cnpj": cnpj,
-            "cnpj_normalizado": relatorio["cnpj_normalizado"],
             "timestamp": datetime.utcnow(),
-            "yolo_report": relatorio["yolo_report"],
-            "llama_report": relatorio["llama_report"],
+            "yolo_analysis": analises["yolo_analysis"],
+            "llama_analysis": analises["llama_analysis"]
         }
 
-        resultado = await colecao_relatorios.insert_one(doc)
+        resultado = await colecao_analises.insert_one(doc)
         client.close()
 
-        print(f"💾 Relatório salvo com _id: {resultado.inserted_id}")
+        print(f"💾 Documento salvo com _id: {resultado.inserted_id}")
 
         # 3️⃣ Retorna resposta para o frontend
         return {
-            "message": "Relatório gerado e salvo com sucesso!",
+            "message": "Análise gerada e salva com sucesso!",
             "cnpj": cnpj,
             "mongo_id": str(resultado.inserted_id),
-            "yolo_report": relatorio["yolo_report"],
-            "llama_report": relatorio["llama_report"],
+            "yolo_analysis": analises["yolo_analysis"],
+            "llama_analysis": analises["llama_analysis"],
         }
 
     except Exception as e:
-        print(f"❌ Erro ao gerar relatório: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar relatório: {str(e)}")
+        print(f"❌ Erro ao gerar análise: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar análise: {str(e)}")
