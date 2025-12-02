@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any, List
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -21,6 +21,19 @@ async def obter_colecao(nome_colecao: str):
     client = AsyncIOMotorClient(MONGO_URI)
     db = client["Usuarios"]
     return db[nome_colecao]
+
+
+# =====================================================
+# 🔹 Helpers de data (apenas dia atual)
+# =====================================================
+def get_today_utc_range():
+    """
+    Retorna o intervalo [início_hoje_utc, fim_hoje_utc)
+    considerando a data de hoje em UTC.
+    """
+    inicio_utc = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    fim_utc = inicio_utc + timedelta(days=1)
+    return inicio_utc, fim_utc
 
 
 # =====================================================
@@ -80,7 +93,7 @@ async def _listar_cnpjs_existentes(colecao, limite: int = 500) -> List[str]:
 
 
 # =====================================================
-# 🔹 Busca dados YOLO / LLaMA
+# 🔹 Busca dados YOLO / LLaMA (APENAS DO DIA ATUAL)
 # =====================================================
 async def buscar_dados_mongo_duplo(cnpj: str):
     colecao = await obter_colecao(COLLECTION_RAW)
@@ -96,21 +109,47 @@ async def buscar_dados_mongo_duplo(cnpj: str):
             {"CNPJ": int(cnpj_limpo)},
         ])
 
-    query = {"$or": base_or}
+    # 🔹 Intervalo de "hoje" em UTC
+    inicio_utc, fim_utc = get_today_utc_range()
+
+    # 🔹 Primeira tentativa: cnpj direto + filtro de data
+    query = {
+        "$or": base_or,
+        "timestamp": {
+            "$gte": inicio_utc,
+            "$lt": fim_utc
+        }
+    }
     cursor = colecao.find(query)
     docs = await cursor.to_list(length=None)
 
+    # 🔹 Fallback: tenta descobrir variantes de CNPJ na coleção, mas ainda só no dia atual
     if not docs:
         existentes = await _listar_cnpjs_existentes(colecao, limite=500)
         existentes_norm = [(orig, normalizar_cnpj(orig)) for orig in existentes]
         candidatos_reais = [orig for (orig, norm) in existentes_norm if norm == cnpj_limpo]
 
         if candidatos_reais:
-            query2 = {"$or": [{"cnpj": {"$in": candidatos_reais}},
-                              {"CNPJ": {"$in": candidatos_reais}}]}
+            query2 = {
+                "$and": [
+                    {
+                        "$or": [
+                            {"cnpj": {"$in": candidatos_reais}},
+                            {"CNPJ": {"$in": candidatos_reais}}
+                        ]
+                    },
+                    {
+                        "timestamp": {
+                            "$gte": inicio_utc,
+                            "$lt": fim_utc
+                        }
+                    }
+                ]
+            }
             cursor2 = colecao.find(query2)
             docs = await cursor2.to_list(length=None)
 
+    # 🔹 Se ainda não tiver nada, retorna dataframes vazios
     if not docs:
         df_vazio = pd.DataFrame(columns=["timestamp", "label"])
         return df_vazio, df_vazio
@@ -197,17 +236,16 @@ def calcular_metricas_yolo(df):
     contagem_atual = df_atual.groupby("label").size().to_dict()
     quantidade_atual = {obj.replace(" ", "_"): int(contagem_atual.get(obj, 0)) for obj in OBJETOS_INTERESSE}
 
-    # 🔹 Métricas corretas por FRAME (não por minuto)
-    #   - contagem de pessoas em cada frame
+    # 🔹 Métricas por FRAME (pessoas)
     df_pessoas = df[df["label"] == "person"].copy()
     contagem_por_frame = (
-        df_pessoas.groupby("timestamp").size()  # cada linha = nº de pessoas naquele frame
+        df_pessoas.groupby("timestamp").size()
     )
 
     media_total = round(contagem_por_frame.mean(), 2) if not contagem_por_frame.empty else 0.0
     pico_total = int(contagem_por_frame.max()) if not contagem_por_frame.empty else 0
 
-    # 🔹 Razão pessoa/cadeira no último frame (como antes)
+    # 🔹 Razão pessoa/cadeira no último frame
     cadeiras = quantidade_atual.get("chair", 0)
     pessoas = quantidade_atual.get("person", 0)
     razao_pessoa_cadeira = round(pessoas / cadeiras, 2) if cadeiras > 0 else ("inf" if pessoas > 0 else 0.0)
@@ -215,8 +253,8 @@ def calcular_metricas_yolo(df):
     return {
         "fonte": "YOLO",
         "quantidade_atual": quantidade_atual,
-        "media_total": media_total,  # média por frame
-        "pico_total": pico_total,    # pico por frame
+        "media_total": media_total,  # média por frame (apenas hoje)
+        "pico_total": pico_total,    # pico por frame (apenas hoje)
         "razao_pessoa_cadeira": razao_pessoa_cadeira,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
