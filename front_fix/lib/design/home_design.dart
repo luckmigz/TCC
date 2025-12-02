@@ -37,27 +37,31 @@ class HomeDesign extends StatelessWidget {
 
   // 🔹 Calcula os limites dinâmicos
   ({double minX, double maxX, double minY, double maxY}) _calcBounds() {
-  final allPoints = [...fluxoYolo, ...fluxoLlama];
-  if (allPoints.isEmpty) return (minX: 0, maxX: 1, minY: 0, maxY: 1);
+    final allPoints = [...fluxoYolo, ...fluxoLlama];
+    if (allPoints.isEmpty) return (minX: 0, maxX: 1, minY: 0, maxY: 1);
 
-  double minX = allPoints.map((p) => p.x).reduce(math.min);
-  double maxX = allPoints.map((p) => p.x).reduce(math.max);
-  double maxY = allPoints.map((p) => p.y).reduce(math.max);
+    double minX = allPoints.map((p) => p.x).reduce(math.min);
+    double maxX = allPoints.map((p) => p.x).reduce(math.max);
+    double maxY = allPoints.map((p) => p.y).reduce(math.max);
 
-  // 🔹 Corrige o último valor do eixo Y para o próximo número redondo acima
-  const double step = 2.0; // 👈 agora é double
-  double maxYAdjusted = ((maxY / step).ceilToDouble() + 1) * step;
+    // 🔹 Corrige o último valor do eixo Y para o próximo número redondo acima
+    const double step = 2.0; // 👈 agora é double
+    double maxYAdjusted = ((maxY / step).ceilToDouble() + 1) * step;
 
-  return (
-    minX: minX,
-    maxX: maxX,
-    minY: 0.0,
-    maxY: maxYAdjusted
-  );
-}
+    return (
+      minX: minX,
+      maxX: maxX,
+      minY: 0.0,
+      maxY: maxYAdjusted
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bounds = _calcBounds();
+    final bool hasData = fluxoYolo.isNotEmpty || fluxoLlama.isNotEmpty;
+    final bounds = hasData
+        ? _calcBounds()
+        : (minX: 0.0, maxX: 1.0, minY: 0.0, maxY: 1.0);
 
     return Scaffold(
       appBar: AppBar(
@@ -78,103 +82,121 @@ class HomeDesign extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // 🔹 Scroll horizontal apenas
+            // 🔹 Área principal: gráfico OU mensagem
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: math.max(MediaQuery.of(context).size.width,
-                      (fluxoYolo.length * 100).toDouble()),
-                  child: LineChart(
-                    LineChartData(
-                      minX: bounds.minX,
-                      maxX: bounds.maxX,
-                      minY: bounds.minY,
-                      maxY: bounds.maxY,
-                      gridData: const FlGridData(show: true),
-                      borderData: FlBorderData(show: true),
-                      titlesData: FlTitlesData(
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            interval: ((bounds.maxX - bounds.minX) / 4)
-                                .clamp(1, 9999999),
-                            getTitlesWidget: (value, _) {
-                              final date = DateTime
-                                  .fromMillisecondsSinceEpoch(
-                                      value.toInt() * 1000);
-                              return Text(
-                                DateFormat.Hm().format(date),
-                                style: const TextStyle(
-                                    fontSize: 10, color: Colors.black54),
-                              );
-                            },
-                          ),
+              child: hasData
+                  ? SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: math.max(
+                          MediaQuery.of(context).size.width,
+                          (fluxoYolo.length * 100).toDouble(),
                         ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            interval: ((bounds.maxY - bounds.minY) / 5)
-                                .clamp(1, 10),
-                            getTitlesWidget: (value, _) => Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(
-                                  fontSize: 10, color: Colors.black54),
+                        child: LineChart(
+                          LineChartData(
+                            minX: bounds.minX,
+                            maxX: bounds.maxX,
+                            minY: bounds.minY,
+                            maxY: bounds.maxY,
+                            gridData: const FlGridData(show: true),
+                            borderData: FlBorderData(show: true),
+                            titlesData: FlTitlesData(
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 40,
+                                  interval: ((bounds.maxX - bounds.minX) / 4)
+                                      .clamp(1, 9999999),
+                                  getTitlesWidget: (value, _) {
+                                    final date =
+                                        DateTime.fromMillisecondsSinceEpoch(
+                                            value.toInt() * 1000);
+                                    return Text(
+                                      DateFormat.Hm().format(date),
+                                      style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.black54),
+                                    );
+                                  },
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval:
+                                      ((bounds.maxY - bounds.minY) / 5)
+                                          .clamp(1, 10),
+                                  getTitlesWidget: (value, _) => Text(
+                                    value.toInt().toString(),
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.black54),
+                                  ),
+                                ),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                             ),
+                            lineTouchData: LineTouchData(
+                              enabled: true,
+                              touchTooltipData: LineTouchTooltipData(
+                                getTooltipItems: (touchedSpots) {
+                                  return touchedSpots.map((spot) {
+                                    final time =
+                                        DateTime.fromMillisecondsSinceEpoch(
+                                            spot.x.toInt() * 1000);
+                                    return LineTooltipItem(
+                                      '${DateFormat.Hm().format(time)}\nY: ${spot.y.toStringAsFixed(1)}',
+                                      const TextStyle(color: Colors.white),
+                                    );
+                                  }).toList();
+                                },
+                              ),
+                            ),
+                            lineBarsData: [
+                              // 🟧 YOLO
+                              LineChartBarData(
+                                isCurved: true,
+                                color: yoloColor,
+                                barWidth: 3,
+                                spots: fluxoYolo,
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: yoloColor.withOpacity(0.2),
+                                ),
+                                dotData: const FlDotData(show: true),
+                              ),
+                              // 🔵 LLaMA
+                              LineChartBarData(
+                                isCurved: true,
+                                color: llamaColor,
+                                barWidth: 3,
+                                spots: fluxoLlama,
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: llamaColor.withOpacity(0.2),
+                                ),
+                                dotData: const FlDotData(show: true),
+                              ),
+                            ],
                           ),
                         ),
-                        topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
                       ),
-                      lineTouchData: LineTouchData(
-                        enabled: true,
-                        touchTooltipData: LineTouchTooltipData(
-                          getTooltipItems: (touchedSpots) {
-                            return touchedSpots.map((spot) {
-                              final time =
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                      spot.x.toInt() * 1000);
-                              return LineTooltipItem(
-                                '${DateFormat.Hm().format(time)}\nY: ${spot.y.toStringAsFixed(1)}',
-                                const TextStyle(color: Colors.white),
-                              );
-                            }).toList();
-                          },
+                    )
+                  : const Center(
+                      child: Text(
+                        'Sem dados de fluxo no momento.\nAguarde a próxima análise.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
                         ),
                       ),
-                      lineBarsData: [
-                        // 🟧 YOLO
-                        LineChartBarData(
-                          isCurved: true,
-                          color: yoloColor,
-                          barWidth: 3,
-                          spots: fluxoYolo,
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: yoloColor.withOpacity(0.2),
-                          ),
-                          dotData: const FlDotData(show: true),
-                        ),
-                        // 🔵 LLaMA
-                        LineChartBarData(
-                          isCurved: true,
-                          color: llamaColor,
-                          barWidth: 3,
-                          spots: fluxoLlama,
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: llamaColor.withOpacity(0.2),
-                          ),
-                          dotData: const FlDotData(show: true),
-                        ),
-                      ],
                     ),
-                  ),
-                ),
-              ),
             ),
             const SizedBox(height: 20),
 
@@ -209,8 +231,7 @@ class HomeDesign extends StatelessWidget {
   }) {
     return Card(
       elevation: 4,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -219,9 +240,13 @@ class HomeDesign extends StatelessWidget {
               children: [
                 Icon(Icons.analytics, size: 40, color: color),
                 const SizedBox(width: 12),
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -229,20 +254,23 @@ class HomeDesign extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _infoCard(
-                    icon: Icons.people,
-                    label: "Total",
-                    value: "$total",
-                    color: color),
+                  icon: Icons.people,
+                  label: "Total",
+                  value: "$total",
+                  color: color,
+                ),
                 _infoCard(
-                    icon: Icons.trending_up,
-                    label: "Pico",
-                    value: "$pico",
-                    color: Colors.redAccent),
+                  icon: Icons.trending_up,
+                  label: "Pico",
+                  value: "$pico",
+                  color: Colors.redAccent,
+                ),
                 _infoCard(
-                    icon: Icons.show_chart,
-                    label: "Média",
-                    value: media.toStringAsFixed(1),
-                    color: Colors.blueAccent),
+                  icon: Icons.show_chart,
+                  label: "Média",
+                  value: media.toStringAsFixed(1),
+                  color: Colors.blueAccent,
+                ),
               ],
             ),
           ],
@@ -261,11 +289,20 @@ class HomeDesign extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 28),
         const SizedBox(height: 6),
-        Text(value,
-            style:
-                const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        Text(label,
-            style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 13,
+          ),
+        ),
       ],
     );
   }

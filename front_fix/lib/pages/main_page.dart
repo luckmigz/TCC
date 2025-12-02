@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/pages/relatorio_page.dart';
 import 'home_page.dart';
 import '../pages/perfil_page.dart';
 
@@ -12,10 +13,11 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
-  // ✅ Duas páginas apenas
+  // Agora com 3 páginas
   final List<Widget> _pages = const [
     HomePage(),
     PerfilPage(),
+    RelatorioPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -28,7 +30,6 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔒 Proteção contra erro de índice inválido
     if (_selectedIndex >= _pages.length) {
       _selectedIndex = 0;
     }
@@ -39,8 +40,8 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color.fromRGBO(46, 133, 157, 1), // Azul (perfil)
-        selectedItemColor: const Color.fromRGBO(225, 105, 30, 1), // Laranja
+        backgroundColor: const Color.fromRGBO(46, 133, 157, 1),
+        selectedItemColor: const Color.fromRGBO(225, 105, 30, 1),
         unselectedItemColor: Colors.white70,
         items: const [
           BottomNavigationBarItem(
@@ -50,6 +51,10 @@ class _MainPageState extends State<MainPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Perfil',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Relatórios',
           ),
         ],
       ),

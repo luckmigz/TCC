@@ -286,4 +286,24 @@ if (response.statusCode == 200 || response.statusCode == 201) {
     throw Exception("Erro ao obter dados de analytics: ${response.body}");
   }
   }
+static Future<Map<String, dynamic>> getReportsData(String cnpj) async {
+    final response = await _safeRequest(() async {
+      return await http.post(
+        Uri.parse("$analyticsURL/reports/generate"),
+        headers: await _getHeaders(),
+        body: jsonEncode({"cnpj": cnpj}),
+      );
+    });
+if (response.statusCode == 200 || response.statusCode == 201) {
+    final data = jsonDecode(response.body);
+   
+    return data;
+  } else {
+ 
+    throw Exception("Erro ao obter dados de analytics: ${response.body}");
+  }
+  }
 }
+
+
+

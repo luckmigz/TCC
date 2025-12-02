@@ -133,7 +133,7 @@ class _LoginDesignState extends State<LoginDesign> {
                                     ),
                                     Expanded(
                                       child: RadioListTile<String>(
-                                        title: const Text('Restaurante'),
+                                        title: const Text('Restaurant'),
                                         value: 'restaurant',
                                         groupValue: _loginAs,
                                         onChanged: (v) => setState(() => _loginAs = v!),
