@@ -93,9 +93,11 @@ async def _listar_cnpjs_existentes(colecao, limite: int = 500) -> List[str]:
 
 
 # =====================================================
-# 🔹 Busca dados YOLO / LLaMA (APENAS DO DIA ATUAL)
+# 🔹 Busca dados YOLO / LLaMA
+#   - somente_hoje=True: limita ao dia atual (UTC)
+#   - somente_hoje=False: pega histórico completo daquele CNPJ
 # =====================================================
-async def buscar_dados_mongo_duplo(cnpj: str):
+async def buscar_dados_mongo_duplo(cnpj: str, somente_hoje: bool = True):
     colecao = await obter_colecao(COLLECTION_RAW)
 
     cnpj_limpo = normalizar_cnpj(cnpj)
@@ -104,49 +106,57 @@ async def buscar_dados_mongo_duplo(cnpj: str):
         {"CNPJ": cnpj_limpo},
     ]
     if cnpj_limpo.isdigit():
-        base_or.extend([
-            {"cnpj": int(cnpj_limpo)},
-            {"CNPJ": int(cnpj_limpo)},
-        ])
+        base_or.extend(
+            [
+                {"cnpj": int(cnpj_limpo)},
+                {"CNPJ": int(cnpj_limpo)},
+            ]
+        )
 
-    # 🔹 Intervalo de "hoje" em UTC
-    inicio_utc, fim_utc = get_today_utc_range()
+    # Filtro base por CNPJ (string/int, cnpj/CNPJ)
+    filtro_base: Dict[str, Any] = {"$or": base_or}
 
-    # 🔹 Primeira tentativa: cnpj direto + filtro de data
-    query = {
-        "$or": base_or,
-        "timestamp": {
+    # 🔹 Se for somente_hoje, adiciona o filtro de intervalo de data
+    if somente_hoje:
+        inicio_utc, fim_utc = get_today_utc_range()
+        filtro_base["timestamp"] = {
             "$gte": inicio_utc,
-            "$lt": fim_utc
+            "$lt": fim_utc,
         }
-    }
-    cursor = colecao.find(query)
+
+    # 🔹 Primeira tentativa
+    cursor = colecao.find(filtro_base)
     docs = await cursor.to_list(length=None)
 
-    # 🔹 Fallback: tenta descobrir variantes de CNPJ na coleção, mas ainda só no dia atual
+    # 🔹 Fallback: tenta descobrir variantes de CNPJ, respeitando o filtro de data se houver
     if not docs:
         existentes = await _listar_cnpjs_existentes(colecao, limite=500)
         existentes_norm = [(orig, normalizar_cnpj(orig)) for orig in existentes]
         candidatos_reais = [orig for (orig, norm) in existentes_norm if norm == cnpj_limpo]
 
         if candidatos_reais:
-            query2 = {
-                "$and": [
-                    {
-                        "$or": [
-                            {"cnpj": {"$in": candidatos_reais}},
-                            {"CNPJ": {"$in": candidatos_reais}}
-                        ]
-                    },
-                    {
-                        "timestamp": {
-                            "$gte": inicio_utc,
-                            "$lt": fim_utc
-                        }
-                    }
+            filtro_fallback: Dict[str, Any] = {
+                "$or": [
+                    {"cnpj": {"$in": candidatos_reais}},
+                    {"CNPJ": {"$in": candidatos_reais}},
                 ]
             }
-            cursor2 = colecao.find(query2)
+
+            if somente_hoje:
+                inicio_utc, fim_utc = get_today_utc_range()
+                filtro_fallback = {
+                    "$and": [
+                        filtro_fallback,
+                        {
+                            "timestamp": {
+                                "$gte": inicio_utc,
+                                "$lt": fim_utc,
+                            }
+                        },
+                    ]
+                }
+
+            cursor2 = colecao.find(filtro_fallback)
             docs = await cursor2.to_list(length=None)
 
     # 🔹 Se ainda não tiver nada, retorna dataframes vazios
@@ -163,11 +173,13 @@ async def buscar_dados_mongo_duplo(cnpj: str):
         for det in doc.get("detections_yolo", []):
             label = str(det.get("label", "")).replace("_", " ").lower()
             conf = converter_valor_bson(det.get("confidence", 0))
-            registros_yolo.append({
-                "timestamp": ts,
-                "label": label,
-                "confidence": conf
-            })
+            registros_yolo.append(
+                {
+                    "timestamp": ts,
+                    "label": label,
+                    "confidence": conf,
+                }
+            )
 
         # LLaMA
         visao_llama = doc.get("detections_llama", {})
@@ -175,11 +187,13 @@ async def buscar_dados_mongo_duplo(cnpj: str):
             for label, valor in visao_llama.items():
                 contagem = converter_valor_bson(valor)
                 if isinstance(contagem, (int, float)):
-                    registros_llama.append({
-                        "timestamp": ts,
-                        "label": label.replace("_", " ").lower(),
-                        "contagem": contagem
-                    })
+                    registros_llama.append(
+                        {
+                            "timestamp": ts,
+                            "label": label.replace("_", " ").lower(),
+                            "contagem": contagem,
+                        }
+                    )
 
     return pd.DataFrame(registros_yolo), pd.DataFrame(registros_llama)
 
@@ -238,9 +252,7 @@ def calcular_metricas_yolo(df):
 
     # 🔹 Métricas por FRAME (pessoas)
     df_pessoas = df[df["label"] == "person"].copy()
-    contagem_por_frame = (
-        df_pessoas.groupby("timestamp").size()
-    )
+    contagem_por_frame = df_pessoas.groupby("timestamp").size()
 
     media_total = round(contagem_por_frame.mean(), 2) if not contagem_por_frame.empty else 0.0
     pico_total = int(contagem_por_frame.max()) if not contagem_por_frame.empty else 0
@@ -253,8 +265,8 @@ def calcular_metricas_yolo(df):
     return {
         "fonte": "YOLO",
         "quantidade_atual": quantidade_atual,
-        "media_total": media_total,  # média por frame (apenas hoje)
-        "pico_total": pico_total,    # pico por frame (apenas hoje)
+        "media_total": media_total,  # média por frame
+        "pico_total": pico_total,  # pico por frame
         "razao_pessoa_cadeira": razao_pessoa_cadeira,
         "ultima_atualizacao": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -312,7 +324,8 @@ def gerar_metricas_vazias(fonte: str = "YOLO"):
 # 🔹 Pipeline completo
 # =====================================================
 async def gerar_analises_duplas(cnpj: str) -> Dict[str, Any]:
-    df_yolo, df_llama = await buscar_dados_mongo_duplo(cnpj)
+    # Para analytics, queremos somente dados de HOJE
+    df_yolo, df_llama = await buscar_dados_mongo_duplo(cnpj, somente_hoje=True)
     analise_yolo = calcular_metricas_yolo(df_yolo)
     analise_llama = calcular_metricas_llama(df_llama)
     return {

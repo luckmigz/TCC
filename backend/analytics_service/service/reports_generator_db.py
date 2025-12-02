@@ -16,133 +16,143 @@ def _relatorio_vazio(fonte: str) -> Dict[str, Any]:
     return {
         "fonte": fonte,
         "daily": [],
-        "total": {obj.replace(" ", "_"): 0 for obj in OBJETOS_INTERESSE},
+        "total": {"person": 0, "chair": 0, "dining_table": 0},
     }
 
 
 # =====================================================
-# 🔹 Relatório diário e total - YOLO
+# 🔹 Helpers internos
 # =====================================================
-def calcular_relatorio_diario_total_yolo(df: pd.DataFrame) -> Dict[str, Any]:
-    """
-    Gera contagem diária e total de cada objeto para YOLO.
-    - total: número total de detecções (linhas) por label
-    - daily: número de detecções por dia e label
-    """
+def _normalizar_df_base(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
-        return _relatorio_vazio("YOLO")
+        return df
 
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
     df = df.dropna(subset=["timestamp"])
+    df["label"] = df["label"].astype(str).str.replace("_", " ").str.lower()
+    df = df[df["label"].isin(OBJETOS_INTERESSE)]
+    return df
 
-    # normalização do label
-    df["label"] = df["label"].str.replace("_", " ").str.lower()
+
+def _agrupar_por_dia(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Agrupa por dia (YYYY-MM-DD) somando contagens por label.
+    Para YOLO, cada linha é 1 objeto detectado; então basta contar.
+    Para LLaMA, já teremos uma coluna de contagem agregada.
+    """
+    if df.empty:
+        return df
+
+    df = df.copy()
+    df["data"] = df["timestamp"].dt.date
+    return df.groupby(["data", "label"])["contagem"].sum().reset_index()
+
+
+# =====================================================
+# 🔹 Relatório YOLO (histórico)
+# =====================================================
+def calcular_relatorio_diario_total_yolo(df: pd.DataFrame) -> Dict[str, Any]:
+    if df.empty:
+        return _relatorio_vazio("YOLO")
+
+    # Base comum
+    df = df.copy()
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
+    df = df.dropna(subset=["timestamp"])
+    df["label"] = df["label"].astype(str).str.replace("_", " ").str.lower()
     df = df[df["label"].isin(OBJETOS_INTERESSE)]
 
     if df.empty:
         return _relatorio_vazio("YOLO")
 
-    # só a parte de data
-    df["date"] = df["timestamp"].dt.date
+    # Cada linha de YOLO vale 1 objeto
+    df["contagem"] = 1
 
-    # 🔹 Total geral por label (qtd de detecções)
-    total_por_label = df.groupby("label").size().to_dict()
-    total = {
-        label.replace(" ", "_"): int(total_por_label.get(label, 0))
-        for label in OBJETOS_INTERESSE
+    # Daily
+    df_daily = _agrupar_por_dia(df)
+
+    daily_records: List[Dict[str, Any]] = []
+    for data, grupo in df_daily.groupby("data"):
+        registro = {"date": data.strftime("%Y-%m-%d")}
+        for obj in OBJETOS_INTERESSE:
+            chave = obj.replace(" ", "_")
+            valor = int(grupo[grupo["label"] == obj]["contagem"].sum())
+            registro[chave] = valor
+        daily_records.append(registro)
+
+    # Total
+    total_por_label = df.groupby("label")["contagem"].sum().to_dict()
+    total_dict = {
+        obj.replace(" ", "_"): int(total_por_label.get(obj, 0))
+        for obj in OBJETOS_INTERESSE
     }
-
-    # 🔹 Contagem diária por label
-    daily_rows: List[Dict[str, Any]] = []
-    group = (
-        df.groupby(["date", "label"])
-        .size()
-        .reset_index(name="total_dia")
-    )
-
-    for _, row in group.iterrows():
-        daily_rows.append(
-            {
-                "date": row["date"].isoformat(),
-                "label": row["label"].replace(" ", "_"),
-                "total_dia": int(row["total_dia"]),
-            }
-        )
 
     return {
         "fonte": "YOLO",
-        "daily": daily_rows,
-        "total": total,
+        "daily": daily_records,
+        "total": total_dict,
     }
 
 
 # =====================================================
-# 🔹 Relatório diário e total - LLaMA
+# 🔹 Relatório LLaMA (histórico)
 # =====================================================
 def calcular_relatorio_diario_total_llama(df: pd.DataFrame) -> Dict[str, Any]:
-    """
-    Gera contagem diária e total de cada objeto para LLaMA.
-    Usa a coluna 'contagem' (quantidade por amostra).
-    - total: soma de 'contagem' por label
-    - daily: soma de 'contagem' por dia e label
-    """
     if df.empty:
         return _relatorio_vazio("LLaMA")
 
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
     df = df.dropna(subset=["timestamp"])
-
-    df["label"] = df["label"].str.replace("_", " ").str.lower()
+    df["label"] = df["label"].astype(str).str.replace("_", " ").str.lower()
     df = df[df["label"].isin(OBJETOS_INTERESSE)]
 
     if df.empty:
         return _relatorio_vazio("LLaMA")
 
-    df["date"] = df["timestamp"].dt.date
+    # Garante coluna contagem
+    if "contagem" not in df.columns:
+        # fallback: se não tiver contagem, assume 1 por linha
+        df["contagem"] = 1
 
-    # 🔹 Total geral por label (soma das contagens)
-    total_series = df.groupby("label")["contagem"].sum()
-    total = {
-        label.replace(" ", "_"): int(total_series.get(label, 0))
-        for label in OBJETOS_INTERESSE
+    # Daily
+    df_daily = _agrupar_por_dia(df)
+
+    daily_records: List[Dict[str, Any]] = []
+    for data, grupo in df_daily.groupby("data"):
+        registro = {"date": data.strftime("%Y-%m-%d")}
+        for obj in OBJETOS_INTERESSE:
+            chave = obj.replace(" ", "_")
+            valor = int(grupo[grupo["label"] == obj]["contagem"].sum())
+            registro[chave] = valor
+        daily_records.append(registro)
+
+    # Total
+    total_por_label = df.groupby("label")["contagem"].sum().to_dict()
+    total_dict = {
+        obj.replace(" ", "_"): int(total_por_label.get(obj, 0))
+        for obj in OBJETOS_INTERESSE
     }
-
-    # 🔹 Contagem diária por label (soma das contagens no dia)
-    daily_rows: List[Dict[str, Any]] = []
-    group = (
-        df.groupby(["date", "label"])["contagem"]
-        .sum()
-        .reset_index(name="total_dia")
-    )
-
-    for _, row in group.iterrows():
-        daily_rows.append(
-            {
-                "date": row["date"].isoformat(),
-                "label": row["label"].replace(" ", "_"),
-                "total_dia": int(row["total_dia"]),
-            }
-        )
 
     return {
         "fonte": "LLaMA",
-        "daily": daily_rows,
-        "total": total,
+        "daily": daily_records,
+        "total": total_dict,
     }
 
 
 # =====================================================
-# 🔹 Função principal de relatório
+# 🔹 Função principal chamada pela rota
 # =====================================================
 async def gerar_relatorio_diario_total(cnpj: str) -> Dict[str, Any]:
     """
-    - Busca todos os documentos de detecção para o CNPJ (YOLO + LLaMA)
+    Gera o relatório diário + total para um CNPJ.
+    - Usa TODO o histórico disponível no Mongo (somente_hoje=False)
     - Calcula relatório diário e total por objeto
     - NÃO salva no banco (isso é responsabilidade da rota)
     """
-    df_yolo, df_llama = await buscar_dados_mongo_duplo(cnpj)
+    df_yolo, df_llama = await buscar_dados_mongo_duplo(cnpj, somente_hoje=False)
 
     relatorio_yolo = calcular_relatorio_diario_total_yolo(df_yolo)
     relatorio_llama = calcular_relatorio_diario_total_llama(df_llama)
